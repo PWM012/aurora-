@@ -1,1 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-black text-light">
+    <div class="d-flex" style="height: 100vh;">
+        <!-- Sidebar -->
+        <div class="sidebar bg-dark d-flex flex-column">
+            <div class="p-4">
+                <div class="text-center mb-5">
+                    <svg width="160" height="60" viewBox="0 0 160 60" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="auroraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#1db954"/>
+                                <stop offset="50%" stop-color="#00ffea"/>
+                                <stop offset="100%" stop-color="#a29bfe"/>
+                            </linearGradient>
+                        </defs>
+                        <text x="80" y="40" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="url(#auroraGrad)" text-anchor="middle">Aurora</text>
+                    </svg>
+                </div>
+                <ul class="nav flex-column gap-3">
+                    <li class="nav-item"><a href="#" class="nav-link text-light active rounded-pill px-4 py-2" id="home-link"><i class="bi bi-house-door-fill me-3"></i>Главная</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link text-light rounded-pill px-4 py-2" id="search-link"><i class="bi bi-search me-3"></i>Поиск</a></li>
+                    <li class="nav-item"><a href="#" class="nav-link text-light rounded-pill px-4 py-2" id="library-link"><i class="bi bi-collection-play-fill me-3"></i>Ваша библиотека</a></li>
+                </ul>
+            </div>
+            <div class="mt-auto p-4 border-top border-secondary">
+                <div class="dropdown">
+                    <a class="d-flex align-items-center text-light dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-3 me-3"></i>
+                        <span>Андрей</span>
+                    </a>
+                    <ul class="dropdown-menu bg-dark border-secondary">
+                        <li><a class="dropdown-item text-light" href="#">Профиль</a></li>
+                        <li><a class="dropdown-item text-light" href="#">Настройки</a></li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li><a class="dropdown-item text-light" href="#">Выйти</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
+        <!-- Main -->
+        <div class="flex-grow-1 d-flex flex-column overflow-hidden">
+            <div class="p-4 border-bottom border-secondary">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 id="page-title" class="m-0">Главная</h2>
+                    <button class="btn btn-outline-light rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="bi bi-upload me-2"></i>Загрузить треки
+                    </button>
+                </div>
+                <div class="d-flex align-items-center" id="search-bar" style="display: none;">
+                    <input type="text" id="search-input" class="form-control bg-dark border-0 text-light rounded-pill px-4" placeholder="Поиск по YouTube Music...">
+                    <button class="btn btn-success rounded-pill ms-3 px-4" id="search-btn">Найти</button>
+                </div>
+            </div>
+            <div class="flex-grow-1 overflow-auto p-4">
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="track-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player -->
+    <div class="fixed-bottom bg-dark border-top border-secondary" style="height: 90px;">
+        <div class="container-fluid h-100">
+            <div class="row h-100 align-items-center">
+                <div class="col-4 d-flex align-items-center">
+                    <img id="current-cover" src="" class="rounded me-3" style="width:56px;height:56px;object-fit:cover;">
+                    <div class="text-truncate">
+                        <div id="current-title" class="text-white fw-semibold text-truncate">Выберите трек</div>
+                        <div id="current-artist" class="text-secondary small text-truncate"></div>
+                    </div>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="d-flex justify-content-center align-items-center mb-2 gap-3">
+                        <button class="btn btn-link text-light" id="shuffle-btn"><i class="bi bi-shuffle fs-5"></i></button>
+                        <button class="btn btn-link text-light" id="prev-btn"><i class="bi bi-skip-start-fill fs-4"></i></button>
+                        <button class="btn btn-light rounded-circle shadow" id="play-btn" style="width:44px;height:44px;"><i class="bi bi-play-fill fs-4"></i></button>
+                        <button class="btn btn-link text-light" id="next-btn"><i class="bi bi-skip-end-fill fs-4"></i></button>
+                        <button class="btn btn-link text-light" id="repeat-btn"><i class="bi bi-repeat fs-5"></i></button>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-center small">
+                        <span id="current-time" class="text-secondary me-2">0:00</span>
+                        <input type="range" class="form-range flex-grow-1 mx-2" id="progress" min="0" max="100" value="0">
+                        <span id="duration" class="text-secondary ms-2">0:00</span>
+                    </div>
+                </div>
+                <div class="col-4 text-end d-flex align-items-center justify-content-end gap-3">
+                    <button class="btn btn-link text-light" id="volume-btn"><i class="bi bi-volume-up-fill fs-5"></i></button>
+                    <input type="range" class="form-range" style="width:100px;" id="volume" min="0" max="1" step="0.01" value="1">
+                    <a href="#" id="download-current" class="btn btn-outline-light btn-sm rounded-pill" style="display:none;">Скачать</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалы -->
+    <div class="modal fade" id="uploadModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Загрузить треки</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="upload-form">
+                        <input type="file" name="files" multiple accept="audio/*" class="form-control bg-secondary text-light">
+                    </form>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success rounded-pill" id="upload-submit">Загрузить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="lyricsModal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Текст песни</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="lyrics-text" class="text-light mb-0" style="white-space: pre-wrap; font-family: inherit;">Загрузка...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="player" preload="metadata"></audio>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
