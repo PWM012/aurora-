@@ -6,20 +6,20 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
 .card {
     background: #181818;
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     transition: all 0.3s ease;
     cursor: pointer;
+    overflow: hidden;
 }
 
 .card:hover {
     background: #282828;
-    transform: translateY(-8px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    transform: translateY(-10px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
 }
 
 .card-img-top {
-    border-radius: 8px 8px 0 0;
-    height: 200px;
+    height: 220px;
     object-fit: cover;
 }
 
@@ -31,22 +31,70 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.3s;
-    border-radius: 8px 8px 0 0;
+    transition: opacity 0.3s ease;
 }
 
 .card:hover .play-overlay {
     opacity: 1;
 }
 
-.default-cover {
-    background: #282828;
+.play-overlay button {
+    width: 80px;
+    height: 80px;
+    transition: transform 0.2s;
+}
+
+.play-overlay button:hover {
+    transform: scale(1.1);
+}
+
+/* Ползунки с заполнением */
+.custom-range {
+    height: 8px;
+    background: #404040;
+    border-radius: 4px;
+    appearance: none;
+    outline: none;
+}
+
+.custom-range::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #1db954;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.custom-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #1db954;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+.custom-range::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 4px;
+}
+
+/* Нижняя панель */
+.player-container {
+    height: 110px; 
+    background: linear-gradient(to top, #000, #111);
+    border-top: 1px solid #282828;
+}
+
+.player-row {
+    height: 100%;
+}
+
+#play-btn {
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 60px;
-    color: #1db954;
 }
-
-.form-range { height: 6px; background: #404040; border-radius: 3px; }
-.form-range::-webkit-slider-thumb { background: #1db954; width: 14px; height: 14px; border-radius: 50%; }
