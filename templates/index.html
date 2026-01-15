@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="bg-black text-light">
-    <div class="d-flex" style="height: 100vh;">
+    <div class="d-flex" style="height: calc(100vh - 110px);">
         <!-- Sidebar -->
         <div class="sidebar bg-dark d-flex flex-column">
             <div class="p-4">
@@ -32,14 +32,14 @@
                 </ul>
             </div>
             <div class="mt-auto p-4 border-top border-secondary">
-                <div class="dropdown">
+                <div class="dropup">
                     <a class="d-flex align-items-center text-light dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle fs-3 me-3"></i>
-                        <span>Андрей</span>
+                        <img id="profile-avatar" src="https://via.placeholder.com/40" class="rounded-circle me-3" style="width:40px;height:40px;object-fit:cover;">
+                        <span id="profile-name">Андрей</span>
                     </a>
                     <ul class="dropdown-menu bg-dark border-secondary">
-                        <li><a class="dropdown-item text-light" href="#">Профиль</a></li>
-                        <li><a class="dropdown-item text-light" href="#">Настройки</a></li>
+                        <li><a class="dropdown-item text-light" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">Профиль</a></li>
+                        <li><a class="dropdown-item text-light" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Настройки</a></li>
                         <li><hr class="dropdown-divider border-secondary"></li>
                         <li><a class="dropdown-item text-light" href="#">Выйти</a></li>
                     </ul>
@@ -47,7 +47,7 @@
             </div>
         </div>
 
-        <!-- Main -->
+        <!-- Main content -->
         <div class="flex-grow-1 d-flex flex-column overflow-hidden">
             <div class="p-4 border-bottom border-secondary">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -67,41 +67,41 @@
         </div>
     </div>
 
-    <!-- Player -->
-    <div class="fixed-bottom bg-dark border-top border-secondary" style="height: 90px;">
+    <!-- Нижняя панель плеера -->
+    <div class="fixed-bottom player-container" style="height: 110px;">
         <div class="container-fluid h-100">
-            <div class="row h-100 align-items-center">
-                <div class="col-4 d-flex align-items-center">
-                    <img id="current-cover" src="" class="rounded me-3" style="width:56px;height:56px;object-fit:cover;">
+            <div class="row player-row align-items-center h-100">
+                <div class="col-3 d-flex align-items-center">
+                    <img id="current-cover" src="" class="rounded me-3" style="width:70px;height:70px;object-fit:cover;">
                     <div class="text-truncate">
-                        <div id="current-title" class="text-white fw-semibold text-truncate">Выберите трек</div>
+                        <div id="current-title" class="text-white fw-semibold text-truncate fs-5">Выберите трек</div>
                         <div id="current-artist" class="text-secondary small text-truncate"></div>
                     </div>
                 </div>
-                <div class="col-4 text-center">
-                    <div class="d-flex justify-content-center align-items-center mb-2 gap-3">
-                        <button class="btn btn-link text-light" id="shuffle-btn"><i class="bi bi-shuffle fs-5"></i></button>
-                        <button class="btn btn-link text-light" id="prev-btn"><i class="bi bi-skip-start-fill fs-4"></i></button>
-                        <button class="btn btn-light rounded-circle shadow" id="play-btn" style="width:44px;height:44px;"><i class="bi bi-play-fill fs-4"></i></button>
-                        <button class="btn btn-link text-light" id="next-btn"><i class="bi bi-skip-end-fill fs-4"></i></button>
-                        <button class="btn btn-link text-light" id="repeat-btn"><i class="bi bi-repeat fs-5"></i></button>
+                <div class="col-6 text-center">
+                    <div class="d-flex justify-content-center align-items-center gap-4 mb-3">
+                        <button class="btn btn-link text-light" id="shuffle-btn"><i class="bi bi-shuffle fs-4"></i></button>
+                        <button class="btn btn-link text-light" id="prev-btn"><i class="bi bi-skip-start-fill fs-3"></i></button>
+                        <button class="btn btn-light rounded-circle shadow" id="play-btn" style="width:64px;height:64px;"><i class="bi bi-play-fill fs-2"></i></button>
+                        <button class="btn btn-link text-light" id="next-btn"><i class="bi bi-skip-end-fill fs-3"></i></button>
+                        <button class="btn btn-link text-light" id="repeat-btn"><i class="bi bi-repeat fs-4"></i></button>
                     </div>
                     <div class="d-flex align-items-center justify-content-center small">
-                        <span id="current-time" class="text-secondary me-2">0:00</span>
-                        <input type="range" class="form-range flex-grow-1 mx-2" id="progress" min="0" max="100" value="0">
-                        <span id="duration" class="text-secondary ms-2">0:00</span>
+                        <span id="current-time" class="text-secondary me-3">0:00</span>
+                        <input type="range" class="custom-range flex-grow-1" id="progress" min="0" max="100" value="0">
+                        <span id="duration" class="text-secondary ms-3">0:00</span>
                     </div>
                 </div>
-                <div class="col-4 text-end d-flex align-items-center justify-content-end gap-3">
-                    <button class="btn btn-link text-light" id="volume-btn"><i class="bi bi-volume-up-fill fs-5"></i></button>
-                    <input type="range" class="form-range" style="width:100px;" id="volume" min="0" max="1" step="0.01" value="1">
+                <div class="col-3 text-end d-flex align-items-center justify-content-end gap-3">
+                    <button class="btn btn-link text-light" id="volume-btn"><i class="bi bi-volume-up-fill fs-4"></i></button>
+                    <input type="range" class="custom-range" style="width:130px;" id="volume" min="0" max="1" step="0.01" value="1">
                     <a href="#" id="download-current" class="btn btn-outline-light btn-sm rounded-pill" style="display:none;">Скачать</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модалы -->
+    <!-- Модал загрузки треков -->
     <div class="modal fade" id="uploadModal">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-light border-secondary">
@@ -122,6 +122,7 @@
         </div>
     </div>
 
+    <!-- Модал текста песни -->
     <div class="modal fade" id="lyricsModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content bg-dark text-light border-secondary">
@@ -131,6 +132,46 @@
                 </div>
                 <div class="modal-body">
                     <pre id="lyrics-text" class="text-light mb-0" style="white-space: pre-wrap; font-family: inherit;">Загрузка...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модал профиля -->
+    <div class="modal fade" id="profileModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Профиль</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="profile-avatar-modal" src="https://via.placeholder.com/150" class="rounded-circle mb-3" style="width:150px;height:150px;object-fit:cover;">
+                    <h4 id="profile-name-modal">Андрей</h4>
+                    <p class="text-secondary" id="profile-stats">Треков в библиотеке: 0</p>
+                    <button class="btn btn-outline-light mt-3" id="change-avatar-btn">Сменить аватар</button>
+                    <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-success rounded-pill" data-bs-dismiss="modal">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модал настроек -->
+    <div class="modal fade" id="settingsModal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Настройки</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="dark-theme-switch" checked>
+                        <label class="form-check-label" for="dark-theme-switch">Тёмная тема</label>
+                    </div>
                 </div>
             </div>
         </div>
