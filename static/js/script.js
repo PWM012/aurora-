@@ -1,5 +1,7 @@
 const audio = document.getElementById('player');
 const trackGrid = document.getElementById('track-grid');
+const progress = document.getElementById('progress');
+const volume = document.getElementById('volume');
 let tracks = [];
 let currentIndex = -1;
 let shuffle = false;
@@ -15,6 +17,16 @@ function formatTime(sec) {
     return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function updateProgressFill() {
+    const percent = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+    progress.style.background = `linear-gradient(to right, #1db954 ${percent}%, #404040 ${percent}%)`;
+}
+
+function updateVolumeFill() {
+    const percent = audio.volume * 100;
+    volume.style.background = `linear-gradient(to right, #1db954 ${percent}%, #404040 ${percent}%)`;
+}
+
 function renderTracks(data, yt = false) {
     trackGrid.innerHTML = '';
     isYtSearch = yt;
@@ -27,28 +39,85 @@ function renderTracks(data, yt = false) {
             <div class="card h-100 position-relative">
                 <img src="${cover}" class="card-img-top" alt="cover">
                 <div class="play-overlay">
-                    <button class="btn btn-success rounded-circle shadow-lg" style="width:80px;height:80px;">
+                    <button class="btn btn-success rounded-circle shadow-lg play-overlay-btn" data-index="${i}">
                         <i class="bi bi-play-fill fs-1"></i>
                     </button>
                 </div>
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title text-white text-truncate mb-1">${track.title}</h5>
-                    <p class="card-text text-secondary small text-truncate mb-2">${track.artist}</p>
+                    <h5 class="card-title text-white text-truncate mb-1">${track.title || 'Неизвестно'}</h5>
+                    <p class="card-text text-secondary small text-truncate mb-2">${track.artist || 'Неизвестный артист'}</p>
                     <p class="text-secondary small mb-3">${formatTime(track.duration)}</p>
                     <div class="mt-auto d-flex gap-2 flex-wrap">
-                        <button class="btn btn-outline-light btn-sm lyrics-btn" data-videoid="${track.videoId || ''}">Текст</button>
-                        ${yt ? `<button class="btn btn-success btn-sm add-yt-btn" data-videoid="${track.videoId}">Добавить</button>` : ''}
-                        ${!yt ? `<button class="btn btn-danger btn-sm delete-btn" data-filename="${track.filename}">Удалить</button>` : ''}
-                        ${!yt ? `<a href="/download/${track.filename}" class="btn btn-outline-light btn-sm">Скачать</a>` : ''}
+                        <button class="btn btn-outline-light btn-sm lyrics-btn" data-videoid="${track.videoId || ''}" data-index="${i}">Текст</button>
+                        ${yt ? `<button class="btn btn-success btn-sm add-yt-btn" data-videoid="${track.videoId}" data-index="${i}">Добавить</button>` : ''}
+                        ${!yt ? `<button class="btn btn-danger btn-sm delete-btn" data-filename="${track.filename}" data-index="${i}">Удалить</button>` : ''}
+                        ${!yt ? `<a href="/download/${track.filename}" class="btn btn-outline-light btn-sm" target="_blank">Скачать</a>` : ''}
                     </div>
                 </div>
             </div>
         `;
-        col.addEventListener('click', (e) => {
-            if (e.target.closest('.btn')) return;
-            if (yt) playYtTrack(i);
-            else playLocalTrack(i);
+
+        // Клик по карточке (кроме кнопок и оверлея)
+        const card = col.querySelector('.card');
+        card.addEventListener('click', (e) => {
+            // Если клик по кнопке, оверлею или ссылке - не запускать трек
+            if (e.target.closest('.btn') || e.target.closest('.play-overlay') || e.target.tagName === 'A') {
+                return;
+            }
+            yt ? playYtTrack(i) : playLocalTrack(i);
         });
+
+        // Обработчик для кнопки воспроизведения в оверлее
+        const overlayBtn = col.querySelector('.play-overlay-btn');
+        overlayBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            yt ? playYtTrack(i) : playLocalTrack(i);
+        });
+
+        // Обработчики для кнопок в карточке
+        const lyricsBtn = col.querySelector('.lyrics-btn');
+        lyricsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const videoId = lyricsBtn.dataset.videoid;
+            if (!videoId) {
+                document.getElementById('lyrics-text').textContent = 'Текст недоступен';
+            } else {
+                fetch(`/lyrics?videoId=${videoId}`)
+                    .then(r => r.json())
+                    .then(data => document.getElementById('lyrics-text').textContent = data.lyrics || 'Текст не найден');
+            }
+            new bootstrap.Modal(document.getElementById('lyricsModal')).show();
+        });
+
+        if (yt) {
+            const addBtn = col.querySelector('.add-yt-btn');
+            addBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addBtn.disabled = true;
+                addBtn.textContent = 'Скачивается...';
+                fetch('/add_from_yt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: addBtn.dataset.videoid })
+                }).then(() => {
+                    alert('Трек добавлен!');
+                    loadLocal();
+                });
+            });
+        } else {
+            const deleteBtn = col.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('Удалить трек?')) {
+                    fetch('/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: deleteBtn.dataset.filename })
+                    }).then(() => loadLocal());
+                }
+            });
+        }
+
         trackGrid.appendChild(col);
     });
 }
@@ -59,9 +128,16 @@ function playLocalTrack(idx) {
     audio.src = `/stream/${track.filename}`;
     audio.play();
     updatePlayerUI(track);
+    updateProgressFill();
+    document.getElementById('download-current').style.display = 'inline-block';
+    document.getElementById('download-current').href = `/download/${track.filename}`;
+    
+    // Обновляем иконку кнопки play
+    document.getElementById('play-btn').innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
 }
 
 function playYtTrack(idx) {
+    currentIndex = idx;
     const track = tracks[idx];
     audio.src = `/yt_stream/${track.videoId}`;
     audio.play();
@@ -72,42 +148,83 @@ function playYtTrack(idx) {
         duration: track.duration
     });
     document.getElementById('download-current').style.display = 'none';
+    updateProgressFill();
+    
+    // Обновляем иконку кнопки play
+    document.getElementById('play-btn').innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
 }
 
 function updatePlayerUI(track) {
-    document.getElementById('current-title').textContent = track.title;
-    document.getElementById('current-artist').textContent = track.artist;
+    document.getElementById('current-title').textContent = track.title || 'Неизвестно';
+    document.getElementById('current-artist').textContent = track.artist || '';
     document.getElementById('current-cover').src = track.cover || track.thumbnail || placeholder;
     document.getElementById('duration').textContent = formatTime(track.duration);
-    document.getElementById('download-current').style.display = 'none';
 }
 
+// Контролы плеера
 audio.addEventListener('timeupdate', () => {
     if (audio.duration) {
-        document.getElementById('progress').value = (audio.currentTime / audio.duration) * 100;
+        progress.value = (audio.currentTime / audio.duration) * 100;
         document.getElementById('current-time').textContent = formatTime(audio.currentTime);
+        updateProgressFill();
     }
 });
 
-document.getElementById('progress').addEventListener('input', () => {
-    audio.currentTime = (document.getElementById('progress').value / 100) * audio.duration;
+progress.addEventListener('input', () => {
+    audio.currentTime = (progress.value / 100) * audio.duration;
+    updateProgressFill();
 });
 
+volume.addEventListener('input', (e) => {
+    audio.volume = e.target.value;
+    updateVolumeFill();
+    const icon = document.getElementById('volume-btn');
+    if (audio.volume === 0) icon.innerHTML = '<i class="bi bi-volume-mute-fill fs-4"></i>';
+    else if (audio.volume < 0.5) icon.innerHTML = '<i class="bi bi-volume-down-fill fs-4"></i>';
+    else icon.innerHTML = '<i class="bi bi-volume-up-fill fs-4"></i>';
+});
+
+audio.addEventListener('volumechange', updateVolumeFill);
+
 document.getElementById('play-btn').addEventListener('click', () => {
-    audio.paused ? audio.play() : audio.pause();
+    if (audio.src) {
+        if (audio.paused) {
+            audio.play();
+            document.getElementById('play-btn').innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
+        } else {
+            audio.pause();
+            document.getElementById('play-btn').innerHTML = '<i class="bi bi-play-fill fs-2"></i>';
+        }
+    }
+});
+
+audio.addEventListener('play', () => {
+    document.getElementById('play-btn').innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
+});
+
+audio.addEventListener('pause', () => {
+    document.getElementById('play-btn').innerHTML = '<i class="bi bi-play-fill fs-2"></i>';
 });
 
 document.getElementById('next-btn').addEventListener('click', () => {
+    if (tracks.length === 0) return;
+    
     let next = currentIndex + 1;
     if (shuffle) next = Math.floor(Math.random() * tracks.length);
     if (next >= tracks.length) next = repeat ? 0 : currentIndex;
-    isYtSearch ? playYtTrack(next) : playLocalTrack(next);
+    if (next !== currentIndex && tracks[next]) {
+        isYtSearch ? playYtTrack(next) : playLocalTrack(next);
+    }
 });
 
 document.getElementById('prev-btn').addEventListener('click', () => {
+    if (tracks.length === 0) return;
+    
     let prev = currentIndex - 1;
     if (prev < 0) prev = repeat ? tracks.length - 1 : currentIndex;
-    isYtSearch ? playYtTrack(prev) : playLocalTrack(prev);
+    if (prev !== currentIndex && tracks[prev]) {
+        isYtSearch ? playYtTrack(prev) : playLocalTrack(prev);
+    }
 });
 
 document.getElementById('shuffle-btn').addEventListener('click', () => {
@@ -118,14 +235,6 @@ document.getElementById('shuffle-btn').addEventListener('click', () => {
 document.getElementById('repeat-btn').addEventListener('click', () => {
     repeat = !repeat;
     document.getElementById('repeat-btn').classList.toggle('text-success', repeat);
-});
-
-document.getElementById('volume').addEventListener('input', (e) => {
-    audio.volume = e.target.value;
-    const icon = document.getElementById('volume-btn');
-    if (audio.volume === 0) icon.innerHTML = '<i class="bi bi-volume-mute-fill fs-5"></i>';
-    else if (audio.volume < 0.5) icon.innerHTML = '<i class="bi bi-volume-down-fill fs-5"></i>';
-    else icon.innerHTML = '<i class="bi bi-volume-up-fill fs-5"></i>';
 });
 
 audio.addEventListener('ended', () => {
@@ -147,64 +256,82 @@ document.getElementById('search-link').addEventListener('click', (e) => {
     document.getElementById('search-input').focus();
 });
 
-document.getElementById('search-btn').addEventListener('click', () => loadYt(document.getElementById('search-input').value.trim()));
-document.getElementById('search-input').addEventListener('keydown', e => e.key === 'Enter' && document.getElementById('search-btn').click());
-
-function loadLocal() { fetch('/tracks').then(r => r.json()).then(d => renderTracks(d, false)); }
-function loadYt(q) { if (q) fetch(`/yt_search?q=${encodeURIComponent(q)}`).then(r => r.json()).then(d => renderTracks(d, true)); }
-
-// Добавление
-trackGrid.addEventListener('click', e => {
-    if (e.target.classList.contains('add-yt-btn')) {
-        const videoId = e.target.dataset.videoid;
-        e.target.disabled = true;
-        e.target.textContent = 'Скачивается...';
-        fetch('/add_from_yt', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({videoId})
-        }).then(() => {
-            alert('Трек добавлен!');
-            loadLocal();
-        });
-    }
+document.getElementById('search-btn').addEventListener('click', () => {
+    const query = document.getElementById('search-input').value.trim();
+    if (query) loadYt(query);
 });
 
-// Удаление
-trackGrid.addEventListener('click', e => {
-    if (e.target.classList.contains('delete-btn')) {
-        if (confirm('Удалить трек?')) {
-            fetch('/delete', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({filename: e.target.dataset.filename})
-            }).then(() => loadLocal());
-        }
-    }
+document.getElementById('search-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('search-btn').click();
 });
 
-// Lyrics
-trackGrid.addEventListener('click', e => {
-    if (e.target.classList.contains('lyrics-btn')) {
-        const videoId = e.target.dataset.videoid;
-        if (!videoId) {
-            document.getElementById('lyrics-text').textContent = 'Текст недоступен';
-        } else {
-            fetch(`/lyrics?videoId=${videoId}`).then(r => r.json()).then(data => {
-                document.getElementById('lyrics-text').textContent = data.lyrics;
-            });
-        }
-        new bootstrap.Modal(document.getElementById('lyricsModal')).show();
-    }
-});
+function loadLocal() {
+    fetch('/tracks')
+        .then(r => r.json())
+        .then(d => renderTracks(d, false))
+        .catch(err => console.error('Ошибка загрузки локальных треков:', err));
+}
 
-// Загрузка
+function loadYt(q) {
+    fetch(`/yt_search?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(d => renderTracks(d, true))
+        .catch(err => console.error('Ошибка поиска YouTube:', err));
+}
+
+// Загрузка треков
 document.getElementById('upload-submit').addEventListener('click', () => {
     const formData = new FormData(document.getElementById('upload-form'));
-    fetch('/upload', {method: 'POST', body: formData}).then(() => {
-        bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
-        loadLocal();
-    });
+    fetch('/upload', { method: 'POST', body: formData })
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('uploadModal')).hide();
+            loadLocal();
+        })
+        .catch(err => console.error('Ошибка загрузки:', err));
 });
 
+// Обработчики для профиля
+document.getElementById('change-avatar-btn').addEventListener('click', () => {
+    document.getElementById('avatar-input').click();
+});
+
+document.getElementById('avatar-input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('profile-avatar-modal').src = event.target.result;
+            document.getElementById('profile-avatar').src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Обновление статистики профиля при открытии модала
+document.getElementById('profileModal').addEventListener('show.bs.modal', () => {
+    fetch('/tracks')
+        .then(r => r.json())
+        .then(tracks => {
+            document.getElementById('profile-stats').textContent = `Треков в библиотеке: ${tracks.length}`;
+        });
+});
+
+// Настройки
+document.getElementById('dark-theme-switch').addEventListener('change', (e) => {
+    if (e.target.checked) {
+        document.body.classList.remove('bg-light', 'text-dark');
+        document.body.classList.add('bg-black', 'text-light');
+    } else {
+        document.body.classList.remove('bg-black', 'text-light');
+        document.body.classList.add('bg-light', 'text-dark');
+    }
+});
+
+// Инициализация
 loadLocal();
+updateVolumeFill();
+updateProgressFill();
+
+// Устанавливаем начальные значения ползунков
+progress.value = 0;
+volume.value = 1;
