@@ -1,7 +1,25 @@
-body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background: #000; }
-.sidebar { width: 280px; background: #000; }
-.sidebar .nav-link { transition: all 0.3s; font-weight: 500; }
-.sidebar .nav-link:hover, .sidebar .nav-link.active { background: #1f1f1f; color: #fff !important; }
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #000;
+}
+
+.sidebar {
+    width: 280px;
+    background: #000;
+}
+
+.sidebar .nav-link {
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background: #1f1f1f;
+    color: #fff !important;
+}
 
 .card {
     background: #181818;
@@ -15,37 +33,158 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
 .card:hover {
     background: #282828;
     transform: translateY(-10px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 .card-img-top {
+    width: 100%;
     height: 220px;
     object-fit: cover;
 }
 
-.play-overlay {
+/* Контейнер для изображения с оверлеем */
+.card-img-container {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+/* Оверлей только на изображении */
+.card-img-container .play-overlay {
     position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none; /* Не блокирует клики */
 }
 
-.card:hover .play-overlay {
+.card-img-container:hover .play-overlay {
     opacity: 1;
 }
 
-.play-overlay button {
+/* Только кнопка Play в оверлее кликабельна */
+.card-img-container .play-overlay button {
+    pointer-events: auto;
     width: 80px;
     height: 80px;
     transition: transform 0.2s;
 }
 
-.play-overlay button:hover {
+.card-img-container .play-overlay button:hover {
     transform: scale(1.1);
+}
+
+/* Тело карточки с кнопками */
+.card-body {
+    padding: 1rem;
+    background: #181818;
+    position: relative;
+    z-index: 2; /* Выше оверлея */
+}
+
+/* Spotify-стиль для кнопок действий */
+.card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* Цвета для разных типов кнопок */
+.action-btn.lyrics {
+    background: rgba(29, 185, 84, 0.2);
+    border-color: rgba(29, 185, 84, 0.3);
+}
+
+.action-btn.lyrics:hover {
+    background: rgba(29, 185, 84, 0.3);
+}
+
+.action-btn.add {
+    background: rgba(0, 123, 255, 0.2);
+    border-color: rgba(0, 123, 255, 0.3);
+}
+
+.action-btn.add:hover {
+    background: rgba(0, 123, 255, 0.3);
+}
+
+.action-btn.playlist {
+    background: rgba(108, 117, 125, 0.2);
+    border-color: rgba(108, 117, 125, 0.3);
+}
+
+.action-btn.playlist:hover {
+    background: rgba(108, 117, 125, 0.3);
+}
+
+.action-btn.delete {
+    background: rgba(220, 53, 69, 0.2);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.action-btn.delete:hover {
+    background: rgba(220, 53, 69, 0.3);
+}
+
+.action-btn.download {
+    background: rgba(111, 66, 193, 0.2);
+    border-color: rgba(111, 66, 193, 0.3);
+}
+
+.action-btn.download:hover {
+    background: rgba(111, 66, 193, 0.3);
+}
+
+/* Подсказки при наведении */
+.action-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    margin-bottom: 5px;
+}
+
+.action-btn:hover::after {
+    opacity: 1;
 }
 
 /* Ползунки с заполнением */
@@ -82,7 +221,7 @@ body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; backg
 
 /* Нижняя панель */
 .player-container {
-    height: 110px; 
+    height: 110px;
     background: linear-gradient(to top, #000, #111);
     border-top: 1px solid #282828;
 }
