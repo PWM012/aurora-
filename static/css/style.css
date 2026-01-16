@@ -1,3 +1,46 @@
+/* Переменные для цветовых схем */
+:root {
+    --accent-color: #1db954;
+    --accent-hover: #1ed760;
+    --accent-rgb: 29, 185, 84;
+}
+
+.color-scheme-green {
+    --accent-color: #1db954;
+    --accent-hover: #1ed760;
+    --accent-rgb: 29, 185, 84;
+}
+
+.color-scheme-blue {
+    --accent-color: #007bff;
+    --accent-hover: #0056b3;
+    --accent-rgb: 0, 123, 255;
+}
+
+.color-scheme-purple {
+    --accent-color: #6f42c1;
+    --accent-hover: #5a32a3;
+    --accent-rgb: 111, 66, 193;
+}
+
+.color-scheme-red {
+    --accent-color: #dc3545;
+    --accent-hover: #b02a37;
+    --accent-rgb: 220, 53, 69;
+}
+
+.color-scheme-orange {
+    --accent-color: #fd7e14;
+    --accent-hover: #d66a0a;
+    --accent-rgb: 253, 126, 20;
+}
+
+.color-scheme-pink {
+    --accent-color: #e83e8c;
+    --accent-hover: #c2176b;
+    --accent-rgb: 232, 62, 140;
+}
+
 body, html {
     height: 100%;
     margin: 0;
@@ -21,12 +64,12 @@ body, html {
     color: #fff !important;
 }
 
-/*  круглая кнопка добавления плейлиста  */
+/* круглая кнопка добавления плейлиста */
 .add-playlist-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 2px dashed rgba(255, 255, 255, 0.3);
     color: #fff;
-    padding: 16px 0; 
+    padding: 16px 0;
     border-radius: 50%;
     font-weight: 600;
     font-size: 15px;
@@ -35,9 +78,9 @@ body, html {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    width: 60px; 
-    height: 60px; 
-    margin: 15px auto; 
+    width: 60px;
+    height: 60px;
+    margin: 15px auto;
     cursor: pointer;
     position: relative;
     overflow: hidden;
@@ -45,7 +88,7 @@ body, html {
 
 .add-playlist-btn::before {
     content: '+';
-    font-size: 28px; /* Увеличен размер плюсика */
+    font-size: 28px;
     font-weight: 300;
     display: flex;
     align-items: center;
@@ -55,16 +98,11 @@ body, html {
 }
 
 .add-playlist-btn:hover {
-    background: rgba(29, 185, 84, 0.2);
-    border-color: #1db954;
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: var(--accent-color);
     border-style: solid;
-    transform: translateY(-2px) scale(1.05); 
-    box-shadow: 0 8px 25px rgba(29, 185, 84, 0.4);
-}
-
-/* Альтернативный вариант с иконкой FontAwesome */
-.add-playlist-btn i {
-    font-size: 24px; 
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(var(--accent-rgb), 0.4);
 }
 
 .card {
@@ -108,7 +146,7 @@ body, html {
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
-    pointer-events: none; 
+    pointer-events: none;
 }
 
 .card-img-container:hover .play-overlay {
@@ -121,10 +159,13 @@ body, html {
     width: 80px;
     height: 80px;
     transition: transform 0.2s;
+    background-color: var(--accent-color);
+    border: none;
 }
 
 .card-img-container .play-overlay button:hover {
     transform: scale(1.1);
+    background-color: var(--accent-hover);
 }
 
 /* Тело карточки с кнопками */
@@ -132,7 +173,7 @@ body, html {
     padding: 1rem;
     background: #181818;
     position: relative;
-    z-index: 2; 
+    z-index: 2;
 }
 
 /* Spotify-стиль для кнопок действий */
@@ -166,12 +207,12 @@ body, html {
 
 /* Цвета для разных типов кнопок */
 .action-btn.lyrics {
-    background: rgba(29, 185, 84, 0.2);
-    border-color: rgba(29, 185, 84, 0.3);
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: rgba(var(--accent-rgb), 0.3);
 }
 
 .action-btn.lyrics:hover {
-    background: rgba(29, 185, 84, 0.3);
+    background: rgba(var(--accent-rgb), 0.3);
 }
 
 .action-btn.add {
@@ -240,13 +281,14 @@ body, html {
     border-radius: 4px;
     appearance: none;
     outline: none;
+    --accent-color: #1db954;
 }
 
 .custom-range::-webkit-slider-thumb {
     appearance: none;
     width: 16px;
     height: 16px;
-    background: #1db954;
+    background: var(--accent-color) !important;
     border-radius: 50%;
     cursor: pointer;
 }
@@ -254,7 +296,7 @@ body, html {
 .custom-range::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: #1db954;
+    background: var(--accent-color) !important;
     border-radius: 50%;
     cursor: pointer;
     border: none;
@@ -309,9 +351,9 @@ body, html {
     background: rgba(255, 255, 255, 0.2);
 }
 
-
+/* Обновленная нижняя панель */
 .player-container {
-    height: 90px;
+    height: 95px;
     background: linear-gradient(to top, #000, #111);
     border-top: 1px solid #282828;
     padding-top: 5px;
@@ -322,36 +364,39 @@ body, html {
     align-items: flex-start;
 }
 
-
+/* Полоска длительности трека */
 .player-progress {
-    margin-top: -5px !important; 
+    margin-top: -5px;
     position: relative;
     z-index: 10;
 }
 
 .player-progress .custom-range {
-    margin-top: 2px; 
+    margin-top: 2px;
 }
 
-
+/* Увеличенная кнопка воспроизведения */
 #play-btn {
-    width: 44px;
-    height: 44px;
+    width: 56px;
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 8px; 
-    background: #1db954;
-    border: none;
+    margin-top: 10px;
+    background: var(--accent-color) !important;
+    border: none !important;
     border-radius: 50%;
-    color: white;
-    font-size: 18px;
+    color: white !important;
+    font-size: 20px;
     transition: all 0.2s ease;
+    padding: 0;
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
 }
 
 #play-btn:hover {
     transform: scale(1.05);
-    background: #1ed760;
+    background: var(--accent-hover) !important;
+    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.4);
 }
 
 .player-controls .btn {
@@ -361,7 +406,7 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 10px; 
+    margin-top: 15px;
 }
 
 .player-controls .btn i {
@@ -370,25 +415,57 @@ body, html {
 
 /* Ползунок громкости */
 .player-volume {
-    margin-top: 12px; 
+    margin-top: 15px;
 }
 
-/* Информация о треке 
-.player-track-info {
-    margin-top: 2px; 
+/* Акцентный цвет для кнопок */
+.btn-success {
+    background-color: var(--accent-color) !important;
+    border-color: var(--accent-color) !important;
 }
 
-.player-track-info h6,
-.player-track-info p {
-    margin-bottom: 2px;
+.btn-success:hover {
+    background-color: var(--accent-hover) !important;
+    border-color: var(--accent-hover) !important;
 }
 
-/* Временные метки для полоски длительности */
-.time-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: #b3b3b3;
-    margin-top: 2px; 
-    margin-bottom: -5px; 
+/* Цвета для плейлистов на главной */
+.playlist-card.top-charts {
+    border-color: var(--accent-color) !important;
+}
+
+.playlist-card.top-charts .bi-fire {
+    color: var(--accent-color) !important;
+}
+
+.playlist-card.new-releases {
+    border-color: #007bff !important;
+}
+
+.playlist-card.new-releases .bi-music-note-beamed {
+    color: #007bff !important;
+}
+
+.playlist-card.favorites {
+    border-color: #e83e8c !important;
+}
+
+.playlist-card.favorites .bi-heart-fill {
+    color: #e83e8c !important;
+}
+
+/* Лоадер */
+.spinner-border.text-success {
+    color: var(--accent-color) !important;
+}
+
+/* Анимация кнопки плей */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(var(--accent-rgb), 0); }
+    100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+}
+
+#play-btn.playing {
+    animation: pulse 2s infinite;
 }
