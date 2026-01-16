@@ -7,12 +7,18 @@ import base64
 from werkzeug.utils import secure_filename
 from ytmusicapi import YTMusic
 from yt_dlp import YoutubeDL
+import requests
+import lyricsgenius
 
 app = Flask(__name__)
 
 MUSIC_FOLDER = 'music'
 ALLOWED_EXTENSIONS = {'.mp3', '.wav', '.ogg', '.flac'}
 ytmusic = YTMusic()
+
+
+GENIUS_API_KEY = 'Fx3OpxR3bmP6xJxizrD9C78VIMYZ48iBYkURj2yHQEh4L_Gmv8EdRz2slPdVH7Y44Zc7xHUkRMoMMI1lPT41Fg'  # Замените на свой ключ
+genius = lyricsgenius.Genius(GENIUS_API_KEY, verbose=False)
 
 def get_local_tracks():
     tracks = []
@@ -45,15 +51,11 @@ def get_local_tracks():
                                 cover = base64.b64encode(tag.data).decode('ascii')
                                 break
                     
-                   
+                    # Фикс артиста из имени файла (Title - Artist - id.mp3)
                     parts = filename_base.split(' - ')
                     if len(parts) >= 2:
-                        if len(parts) == 3:
-                            title = parts[0].strip()
-                            artist = parts[1].strip()
-                        else:
-                            title = parts[0].strip()
-                            artist = parts[1].strip()
+                        title = parts[0].strip()
+                        artist = parts[1].strip() if len(parts) >= 2 else 'Неизвестный артист'
                     
                     tracks.append({
                         'title': title,
@@ -61,7 +63,7 @@ def get_local_tracks():
                         'album': album,
                         'filename': rel_path,
                         'duration': duration,
-                        'cover': f'data:image/jpeg;base64,{cover}' if cover else None
+                        'cover': f'data:image/jpeg;base64,{cover}' if cover else None,
                     })
     tracks.sort(key=lambda x: x['title'].lower())
     return tracks
@@ -103,7 +105,7 @@ def add_from_yt():
     url = f"https://www.youtube.com/watch?v={video_id}"
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': os.path.join(MUSIC_FOLDER, '%(title)s - %(artist)s - %(id)s.%(ext)s'),
+        'outtmpl': os.path.join(MUSIC_FOLDER, '%(title)s - %(artist)s.%(ext)s'),
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -176,15 +178,69 @@ def delete_track():
 
 @app.route('/lyrics')
 def get_lyrics():
-    videoId = request.args.get('videoId')
-    if videoId:
+    title = request.args.get('title', '')
+    artist = request.args.get('artist', '')
+    video_id = request.args.get('videoId', '')
+    
+    # Пробуем получить текст разными способами
+    
+    # 1. Пробуем через Genius API
+    if GENIUS_API_KEY != 'Fx3OpxR3bmP6xJxizrD9C78VIMYZ48iBYkURj2yHQEh4L_Gmv8EdRz2slPdVH7Y44Zc7xHUkRMoMMI1lPT41Fg':
         try:
-            lyrics_data = ytmusic.get_lyrics(videoId)
-            lyrics = lyrics_data.get('lyrics', 'Текст песни не найден.')
-            return jsonify({'lyrics': lyrics})
+            song = genius.search_song(title, artist)
+            if song and song.lyrics:
+                return jsonify({'lyrics': song.lyrics})
         except:
-            return jsonify({'lyrics': 'Текст песни не найден.'})
-    return jsonify({'lyrics': 'Текст недоступен.'})
+            pass
+    
+    # 2. Пробуем через YouTube Music
+    if video_id:
+        try:
+            lyrics_data = ytmusic.get_lyrics(video_id)
+            if lyrics_data and lyrics_data.get('lyrics'):
+                return jsonify({'lyrics': lyrics_data.get('lyrics')})
+        except:
+            pass
+    
+    # 3. Пробуем через локальную базу
+    try:
+        # Проверяем есть ли локальный файл с текстом
+        lyrics_file = os.path.join('lyrics', f"{artist} - {title}.txt")
+        if os.path.exists(lyrics_file):
+            with open(lyrics_file, 'r', encoding='utf-8') as f:
+                lyrics = f.read()
+                return jsonify({'lyrics': lyrics})
+    except:
+        pass
+    
+    # 4. Возвращаем заглушку
+    return jsonify({
+        'lyrics': f'Текст песни "{title}" - {artist} не найден.\n\nЧтобы добавить текст:\n1. Создайте файл в папке lyrics с именем "{artist} - {title}.txt"\n2. Вставьте в него текст песни\n3. Обновите страницу'
+    })
+
+@app.route('/playlist_stats')
+def playlist_stats():
+    """Получение статистики по плейлистам"""
+    try:
+        import json
+        playlists_data = {}
+        playlists_file = 'playlists.json'
+        
+        if os.path.exists(playlists_file):
+            with open(playlists_file, 'r', encoding='utf-8') as f:
+                playlists_data = json.load(f)
+        
+        return jsonify({
+            'count': len(playlists_data),
+            'playlists': list(playlists_data.keys()),
+            'total_tracks': sum(len(p['tracks']) for p in playlists_data.values())
+        })
+    except:
+        return jsonify({'count': 0, 'playlists': [], 'total_tracks': 0})
 
 if __name__ == '__main__':
+    # Создаем папки если их нет
+    os.makedirs(MUSIC_FOLDER, exist_ok=True)
+    os.makedirs('lyrics', exist_ok=True)
+    
     app.run(debug=True, port=5000)
