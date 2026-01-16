@@ -27,93 +27,115 @@ function updateVolumeFill() {
     volume.style.background = `linear-gradient(to right, #1db954 ${percent}%, #404040 ${percent}%)`;
 }
 
+// Инициализация кнопки создания плейлиста (только если элемент существует)
+const createPlaylistBtn = document.getElementById('create-playlist-btn');
+if (createPlaylistBtn) {
+    createPlaylistBtn.addEventListener('click', () => {
+        const name = document.getElementById('new-playlist-name')?.value.trim();
+        if (name) {
+            // Здесь будет логика создания плейлиста
+            alert(`Плейлист "${name}" создан!`);
+            bootstrap.Modal.getInstance(document.getElementById('createPlaylistModal')).hide();
+            document.getElementById('new-playlist-name').value = '';
+        }
+    });
+}
+
 function renderTracks(data, yt = false) {
     trackGrid.innerHTML = '';
     isYtSearch = yt;
     tracks = data;
+    
     data.forEach((track, i) => {
         const col = document.createElement('div');
         col.className = 'col';
         const cover = track.cover || track.thumbnail || placeholder;
+        
         col.innerHTML = `
             <div class="card h-100 position-relative">
-                <img src="${cover}" class="card-img-top" alt="cover">
-                <div class="play-overlay">
-                    <button class="btn btn-success rounded-circle shadow-lg play-overlay-btn" data-index="${i}">
-                        <i class="bi bi-play-fill fs-1"></i>
-                    </button>
+                <div class="card-img-container position-relative">
+                    <img src="${cover}" class="card-img-top" alt="cover">
+                    <div class="play-overlay">
+                        <button class="btn btn-success rounded-circle shadow-lg play-overlay-btn">
+                            <i class="bi bi-play-fill fs-1"></i>
+                        </button>
+                    </div>
                 </div>
+                
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title text-white text-truncate mb-1">${track.title || 'Неизвестно'}</h5>
                     <p class="card-text text-secondary small text-truncate mb-2">${track.artist || 'Неизвестный артист'}</p>
                     <p class="text-secondary small mb-3">${formatTime(track.duration)}</p>
-                    <div class="mt-auto d-flex gap-2 flex-wrap">
-                        <button class="btn btn-outline-light btn-sm lyrics-btn" data-videoid="${track.videoId || ''}" data-index="${i}">Текст</button>
-                        ${yt ? `<button class="btn btn-success btn-sm add-yt-btn" data-videoid="${track.videoId}" data-index="${i}">Добавить</button>` : ''}
-                        ${!yt ? `<button class="btn btn-danger btn-sm delete-btn" data-filename="${track.filename}" data-index="${i}">Удалить</button>` : ''}
-                        ${!yt ? `<a href="/download/${track.filename}" class="btn btn-outline-light btn-sm" target="_blank">Скачать</a>` : ''}
+                    <div class="card-actions mt-auto">
+                        ${track.videoId ? `<button class="action-btn lyrics" data-tooltip="Текст" data-videoid="${track.videoId}"><i class="bi bi-chat-left-text"></i></button>` : ''}
+                        ${yt ? `<button class="action-btn add" data-tooltip="Добавить" data-videoid="${track.videoId}"><i class="bi bi-plus"></i></button>` : ''}
+                        ${!yt ? `<button class="action-btn delete" data-tooltip="Удалить" data-filename="${track.filename}"><i class="bi bi-trash"></i></button>` : ''}
+                        ${!yt ? `<a href="/download/${track.filename}" class="action-btn download" data-tooltip="Скачать"><i class="bi bi-download"></i></a>` : ''}
                     </div>
                 </div>
             </div>
         `;
 
-        // Клик по карточке (кроме кнопок и оверлея)
-        const card = col.querySelector('.card');
-        card.addEventListener('click', (e) => {
-            // Если клик по кнопке, оверлею или ссылке - не запускать трек
-            if (e.target.closest('.btn') || e.target.closest('.play-overlay') || e.target.tagName === 'A') {
-                return;
-            }
-            yt ? playYtTrack(i) : playLocalTrack(i);
-        });
-
-        // Обработчик для кнопки воспроизведения в оверлее
+        // Кнопка Play
         const overlayBtn = col.querySelector('.play-overlay-btn');
-        overlayBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            yt ? playYtTrack(i) : playLocalTrack(i);
-        });
+        if (overlayBtn) {
+            overlayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                yt ? playYtTrack(i) : playLocalTrack(i);
+            });
+        }
 
-        // Обработчики для кнопок в карточке
-        const lyricsBtn = col.querySelector('.lyrics-btn');
-        lyricsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const videoId = lyricsBtn.dataset.videoid;
-            if (!videoId) {
-                document.getElementById('lyrics-text').textContent = 'Текст недоступен';
-            } else {
+        // Текст песни
+        const lyricsBtn = col.querySelector('.lyrics');
+        if (lyricsBtn && lyricsBtn.dataset.videoid) {
+            lyricsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const videoId = lyricsBtn.dataset.videoid;
                 fetch(`/lyrics?videoId=${videoId}`)
                     .then(r => r.json())
-                    .then(data => document.getElementById('lyrics-text').textContent = data.lyrics || 'Текст не найден');
-            }
-            new bootstrap.Modal(document.getElementById('lyricsModal')).show();
-        });
+                    .then(data => {
+                        // Показываем в модальном окне
+                        document.getElementById('lyrics-text').textContent = data.lyrics || 'Текст не найден';
+                        new bootstrap.Modal(document.getElementById('lyricsModal')).show();
+                    });
+            });
+        }
 
-        if (yt) {
-            const addBtn = col.querySelector('.add-yt-btn');
+        // Добавить из YouTube
+        const addBtn = col.querySelector('.add');
+        if (addBtn) {
             addBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                addBtn.disabled = true;
-                addBtn.textContent = 'Скачивается...';
+                e.preventDefault();
+                const videoId = addBtn.dataset.videoid;
                 fetch('/add_from_yt', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ videoId: addBtn.dataset.videoid })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({videoId})
                 }).then(() => {
-                    alert('Трек добавлен!');
                     loadLocal();
+                    alert('Трек добавлен!');
                 });
             });
-        } else {
-            const deleteBtn = col.querySelector('.delete-btn');
+        }
+
+        // Удалить трек
+        const deleteBtn = col.querySelector('.delete');
+        if (deleteBtn) {
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                e.preventDefault();
+                const filename = deleteBtn.dataset.filename;
                 if (confirm('Удалить трек?')) {
                     fetch('/delete', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ filename: deleteBtn.dataset.filename })
-                    }).then(() => loadLocal());
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({filename})
+                    }).then(() => {
+                        loadLocal();
+                    });
                 }
             });
         }
@@ -131,8 +153,6 @@ function playLocalTrack(idx) {
     updateProgressFill();
     document.getElementById('download-current').style.display = 'inline-block';
     document.getElementById('download-current').href = `/download/${track.filename}`;
-    
-    // Обновляем иконку кнопки play
     document.getElementById('play-btn').innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
 }
 
@@ -149,8 +169,6 @@ function playYtTrack(idx) {
     });
     document.getElementById('download-current').style.display = 'none';
     updateProgressFill();
-    
-    // Обновляем иконку кнопки play
     document.getElementById('play-btn').innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
 }
 
@@ -161,7 +179,7 @@ function updatePlayerUI(track) {
     document.getElementById('duration').textContent = formatTime(track.duration);
 }
 
-// Контролы плеера
+// Контролы плеера (оставляем как есть)
 audio.addEventListener('timeupdate', () => {
     if (audio.duration) {
         progress.value = (audio.currentTime / audio.duration) * 100;
@@ -208,7 +226,6 @@ audio.addEventListener('pause', () => {
 
 document.getElementById('next-btn').addEventListener('click', () => {
     if (tracks.length === 0) return;
-    
     let next = currentIndex + 1;
     if (shuffle) next = Math.floor(Math.random() * tracks.length);
     if (next >= tracks.length) next = repeat ? 0 : currentIndex;
@@ -219,7 +236,6 @@ document.getElementById('next-btn').addEventListener('click', () => {
 
 document.getElementById('prev-btn').addEventListener('click', () => {
     if (tracks.length === 0) return;
-    
     let prev = currentIndex - 1;
     if (prev < 0) prev = repeat ? tracks.length - 1 : currentIndex;
     if (prev !== currentIndex && tracks[prev]) {
@@ -290,7 +306,7 @@ document.getElementById('upload-submit').addEventListener('click', () => {
         .catch(err => console.error('Ошибка загрузки:', err));
 });
 
-// Обработчики для профиля
+// Профиль
 document.getElementById('change-avatar-btn').addEventListener('click', () => {
     document.getElementById('avatar-input').click();
 });
@@ -307,7 +323,6 @@ document.getElementById('avatar-input').addEventListener('change', (e) => {
     }
 });
 
-// Обновление статистики профиля при открытии модала
 document.getElementById('profileModal').addEventListener('show.bs.modal', () => {
     fetch('/tracks')
         .then(r => r.json())
@@ -331,7 +346,5 @@ document.getElementById('dark-theme-switch').addEventListener('change', (e) => {
 loadLocal();
 updateVolumeFill();
 updateProgressFill();
-
-// Устанавливаем начальные значения ползунков
 progress.value = 0;
 volume.value = 1;
