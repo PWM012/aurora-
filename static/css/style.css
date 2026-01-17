@@ -1,471 +1,813 @@
-/* Переменные для цветовых схем */
+/* Основные стили */
 :root {
     --accent-color: #1db954;
-    --accent-hover: #1ed760;
-    --accent-rgb: 29, 185, 84;
+    --bg-dark: #121212;
+    --bg-darker: #000000;
+    --bg-card: #181818;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --border-color: #282828;
 }
 
-.color-scheme-green {
-    --accent-color: #1db954;
-    --accent-hover: #1ed760;
-    --accent-rgb: 29, 185, 84;
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    overflow-x: hidden;
 }
 
-.color-scheme-blue {
-    --accent-color: #007bff;
-    --accent-hover: #0056b3;
-    --accent-rgb: 0, 123, 255;
-}
-
-.color-scheme-purple {
-    --accent-color: #6f42c1;
-    --accent-hover: #5a32a3;
-    --accent-rgb: 111, 66, 193;
-}
-
-.color-scheme-red {
-    --accent-color: #dc3545;
-    --accent-hover: #b02a37;
-    --accent-rgb: 220, 53, 69;
-}
-
-.color-scheme-orange {
-    --accent-color: #fd7e14;
-    --accent-hover: #d66a0a;
-    --accent-rgb: 253, 126, 20;
-}
-
-.color-scheme-pink {
-    --accent-color: #e83e8c;
-    --accent-hover: #c2176b;
-    --accent-rgb: 232, 62, 140;
-}
-
-body, html {
-    height: 100%;
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #000;
-}
-
+/* Улучшение левой панели */
 .sidebar {
     width: 280px;
-    background: #000;
+    min-width: 280px;
+    background: linear-gradient(180deg, #000000 0%, #121212 100%);
+    border-right: 1px solid var(--border-color);
+    height: calc(100vh - 95px);
+    position: relative;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Логотип */
+.sidebar .logo {
+    padding: 25px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar .logo svg {
+    filter: drop-shadow(0 0 10px rgba(29, 185, 84, 0.3));
+}
+
+/* Основная навигация */
+.sidebar .nav {
+    padding: 15px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 .sidebar .nav-link {
-    transition: all 0.3s;
+    color: var(--text-secondary) !important;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    padding: 12px 15px;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.sidebar .nav-link:hover {
+    color: var(--text-primary) !important;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.sidebar .nav-link.active {
+    background: rgba(29, 185, 84, 0.2) !important;
+    color: var(--accent-color) !important;
+    border-left: 3px solid var(--accent-color);
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.2);
+}
+
+.sidebar .nav-link i {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+    margin-right: 12px;
+}
+
+/* Разделитель */
+.sidebar hr {
+    margin: 15px 20px;
+    background-color: var(--border-color);
+    opacity: 0.5;
+}
+
+/* Заголовок плейлистов */
+.playlists-title {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 20px 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Список плейлистов */
+#playlists-list {
+    padding: 0 20px 20px 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.playlist-item {
+    margin-bottom: 5px;
+}
+
+.playlist-link {
+    color: var(--text-secondary) !important;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-decoration: none;
+}
+
+.playlist-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary) !important;
+}
+
+.playlist-link .playlist-name {
+    font-size: 14px;
     font-weight: 500;
 }
 
-.sidebar .nav-link:hover,
-.sidebar .nav-link.active {
-    background: #1f1f1f;
-    color: #fff !important;
-}
-
-/* круглая кнопка добавления плейлиста */
-.add-playlist-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px dashed rgba(255, 255, 255, 0.3);
-    color: #fff;
-    padding: 16px 0;
-    border-radius: 50%;
-    font-weight: 600;
-    font-size: 15px;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 60px;
-    height: 60px;
-    margin: 15px auto;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-
-.add-playlist-btn::before {
-    content: '+';
-    font-size: 28px;
-    font-weight: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-}
-
-.add-playlist-btn:hover {
-    background: rgba(var(--accent-rgb), 0.2);
-    border-color: var(--accent-color);
-    border-style: solid;
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(var(--accent-rgb), 0.4);
-}
-
-.card {
-    background: #181818;
+.edit-playlist-btn {
+    background: transparent;
     border: none;
+    color: var(--text-secondary);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.playlist-link:hover .edit-playlist-btn {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.edit-playlist-btn:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: var(--text-primary);
+}
+
+/* Профиль */
+.profile-section {
+    margin-top: auto;
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--accent-color);
+}
+
+.profile-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+/* Кнопка создания плейлиста */
+.btn-outline-success {
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-success:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
+/* Скроллбар для плейлистов */
+#playlists-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+#playlists-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#playlists-list::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+}
+
+#playlists-list::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Главный контент */
+.flex-grow-1 {
+    flex: 1;
+    background: linear-gradient(180deg, #121212 0%, #000000 100%);
+    height: calc(100vh - 95px);
+    overflow-y: auto;
+}
+
+/* Заголовок страницы */
+#page-title {
+    font-weight: 700;
+    font-size: 2rem;
+    background: linear-gradient(90deg, #fff, var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Карточки */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    transition: all 0.3s ease;
-    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    cursor: pointer;
 }
 
 .card:hover {
-    background: #282828;
-    transform: translateY(-10px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    background-color: #282828;
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-color);
+}
+
+.card-img-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px 8px 0 0;
 }
 
 .card-img-top {
+    transition: transform 0.5s ease;
     width: 100%;
-    height: 220px;
+    aspect-ratio: 1;
     object-fit: cover;
 }
 
-/* Контейнер для изображения с оверлеем */
-.card-img-container {
-    position: relative;
-    height: 220px;
-    overflow: hidden;
+.card:hover .card-img-top {
+    transform: scale(1.08);
 }
 
-/* Оверлей только на изображении */
-.card-img-container .play-overlay {
+.play-overlay {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
-    pointer-events: none;
 }
 
-.card-img-container:hover .play-overlay {
+.card:hover .play-overlay {
     opacity: 1;
 }
 
-/* Только кнопка Play в оверлее кликабельна */
-.card-img-container .play-overlay button {
-    pointer-events: auto;
-    width: 80px;
-    height: 80px;
-    transition: transform 0.2s;
-    background-color: var(--accent-color);
+.play-overlay .btn {
+    width: 50px;
+    height: 50px;
+    transform: translateY(10px);
+    transition: transform 0.3s ease;
+    background: var(--accent-color);
     border: none;
 }
 
-.card-img-container .play-overlay button:hover {
-    transform: scale(1.1);
-    background-color: var(--accent-hover);
+.card:hover .play-overlay .btn {
+    transform: translateY(0);
+    background: #1ed760;
 }
 
-/* Тело карточки с кнопками */
-.card-body {
-    padding: 1rem;
-    background: #181818;
-    position: relative;
+/* Бейджи для карточек */
+.card-badge, .chart-badge, .new-badge, .trending-badge, .position-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     z-index: 2;
+    backdrop-filter: blur(10px);
 }
 
-/* Spotify-стиль для кнопок действий */
-.card-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: auto;
+.card-badge {
+    background: rgba(29, 185, 84, 0.9);
+    color: white;
 }
 
-.action-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+.chart-badge {
+    background: linear-gradient(45deg, rgba(255, 107, 107, 0.9), rgba(255, 167, 38, 0.9));
+    color: white;
+}
+
+.new-badge {
+    background: linear-gradient(45deg, rgba(52, 152, 219, 0.9), rgba(155, 89, 182, 0.9));
+    color: white;
+}
+
+.trending-badge {
+    background: linear-gradient(45deg, rgba(231, 76, 60, 0.9), rgba(243, 156, 18, 0.9));
+    color: white;
+    font-size: 12px;
+}
+
+.position-badge {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+/* Карточки настроения */
+.mood-card {
+    border-width: 2px !important;
+    cursor: pointer;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #fff;
-    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.mood-card:hover {
+    transform: translateY(-5px) scale(1.02);
+}
+
+.mood-card .bi {
+    font-size: 2.5rem !important;
+    filter: drop-shadow(0 0 10px currentColor);
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.col {
+    animation: fadeInUp 0.5s ease forwards;
+    animation-delay: calc(var(--item-index) * 0.1s);
+    opacity: 0;
+}
+
+/* Кнопки действий на карточках */
+.card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: var(--text-secondary);
     transition: all 0.2s ease;
-    cursor: pointer;
     position: relative;
 }
 
 .action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
     transform: scale(1.1);
 }
 
-/* Цвета для разных типов кнопок */
-.action-btn.lyrics {
-    background: rgba(var(--accent-rgb), 0.2);
-    border-color: rgba(var(--accent-rgb), 0.3);
-}
-
-.action-btn.lyrics:hover {
-    background: rgba(var(--accent-rgb), 0.3);
-}
-
-.action-btn.add {
-    background: rgba(0, 123, 255, 0.2);
-    border-color: rgba(0, 123, 255, 0.3);
-}
-
-.action-btn.add:hover {
-    background: rgba(0, 123, 255, 0.3);
-}
-
-.action-btn.playlist {
-    background: rgba(111, 66, 193, 0.2);
-    border-color: rgba(111, 66, 193, 0.3);
-}
-
-.action-btn.playlist:hover {
-    background: rgba(111, 66, 193, 0.3);
-}
-
-.action-btn.delete {
-    background: rgba(220, 53, 69, 0.2);
-    border-color: rgba(220, 53, 69, 0.3);
-}
-
-.action-btn.delete:hover {
-    background: rgba(220, 53, 69, 0.3);
-}
-
-.action-btn.download {
-    background: rgba(108, 117, 125, 0.2);
-    border-color: rgba(108, 117, 125, 0.3);
-}
-
-.action-btn.download:hover {
-    background: rgba(108, 117, 125, 0.3);
-}
-
-/* Подсказки при наведении */
-.action-btn::after {
+.action-btn[data-tooltip]::after {
     content: attr(data-tooltip);
     position: absolute;
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.9);
     color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-size: 12px;
     white-space: nowrap;
     opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
     pointer-events: none;
-    transition: opacity 0.2s ease;
-    margin-bottom: 5px;
 }
 
-.action-btn:hover::after {
+.action-btn:hover[data-tooltip]::after {
     opacity: 1;
+    visibility: visible;
 }
 
-/* Ползунки с заполнением */
-.custom-range {
-    height: 8px;
-    background: #404040;
-    border-radius: 4px;
-    appearance: none;
-    outline: none;
-    --accent-color: #1db954;
-}
-
-.custom-range::-webkit-slider-thumb {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--accent-color) !important;
+/* Стили для загрузки */
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(29, 185, 84, 0.2);
+    border-top: 4px solid var(--accent-color);
     border-radius: 50%;
-    cursor: pointer;
+    animation: spin 1s linear infinite;
 }
 
-.custom-range::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    background: var(--accent-color) !important;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
-.custom-range::-webkit-slider-runnable-track {
-    height: 8px;
-    border-radius: 4px;
-}
-
-/* Стили для списка плейлистов */
-.playlist-item .nav-link {
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
-}
-
-.playlist-item .nav-link:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.playlist-item .edit-playlist-btn {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.playlist-item:hover .edit-playlist-btn {
-    opacity: 1;
-}
-
-/* Управление плейлистом */
-#playlist-tracks-list {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-#playlist-tracks-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-#playlist-tracks-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 4px;
-}
-
-#playlist-tracks-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-#playlist-tracks-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Обновленная нижняя панель */
+/* Стили для плеера */
 .player-container {
+    background: linear-gradient(to right, #000000, #121212);
+    border-top: 1px solid var(--border-color);
     height: 95px;
-    background: linear-gradient(to top, #000, #111);
-    border-top: 1px solid #282828;
-    padding-top: 5px;
+    backdrop-filter: blur(10px);
 }
 
 .player-row {
-    height: 100%;
-    align-items: flex-start;
+    padding: 0 20px;
 }
 
-/* Полоска длительности трека */
-.player-progress {
-    margin-top: -5px;
-    position: relative;
-    z-index: 10;
+.custom-range {
+    -webkit-appearance: none;
+    height: 4px;
+    background: #404040;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
 }
 
-.player-progress .custom-range {
-    margin-top: 2px;
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
 }
 
-/* Увеличенная кнопка воспроизведения */
+.custom-range::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.custom-range::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.custom-range::-moz-range-thumb:hover {
+    transform: scale(1.2);
+}
+
 #play-btn {
-    width: 56px;
-    height: 56px;
+    width: 50px;
+    height: 50px;
+    background: var(--accent-color);
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 10px;
-    background: var(--accent-color) !important;
-    border: none !important;
-    border-radius: 50%;
-    color: white !important;
-    font-size: 20px;
     transition: all 0.2s ease;
-    padding: 0;
-    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
 }
 
 #play-btn:hover {
+    background: #1ed760;
     transform: scale(1.05);
-    background: var(--accent-hover) !important;
-    box-shadow: 0 6px 16px rgba(var(--accent-rgb), 0.4);
 }
 
-.player-controls .btn {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 15px;
+/* Стили для тостов */
+.toast-container {
+    z-index: 9999;
 }
 
-.player-controls .btn i {
-    font-size: 16px;
+.toast {
+    background: rgba(40, 40, 40, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
 }
 
-/* Ползунок громкости */
-.player-volume {
-    margin-top: 15px;
+/* Адаптивность */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 80px;
+        min-width: 80px;
+    }
+    
+    .sidebar .nav-link span:not(.playlist-name),
+    .sidebar .text-secondary.small,
+    .sidebar .playlist-name,
+    .sidebar .edit-playlist-btn,
+    .playlists-title span,
+    .profile-name {
+        display: none !important;
+    }
+    
+    .sidebar .nav-link i {
+        margin-right: 0;
+        font-size: 22px;
+    }
+    
+    .sidebar .playlist-link i {
+        margin-right: 0;
+    }
+    
+    .player-container {
+        height: 120px;
+        padding: 10px 0;
+    }
+    
+    .player-row {
+        flex-direction: column;
+        padding: 10px;
+    }
+    
+    .player-row > div {
+        width: 100% !important;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    #play-btn {
+        width: 45px;
+        height: 45px;
+    }
 }
 
-/* Акцентный цвет для кнопок */
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Стили для модальных окон */
+.modal-content {
+    background: linear-gradient(135deg, #181818 0%, #000000 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 20px;
+}
+
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: white;
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-color);
+    color: white;
+    box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.25);
+    outline: none;
+}
+
+/* Стили для переключателей */
+.form-check-input:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.form-switch .form-check-input:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%231db954'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:checked {
+    background-position: right center;
+}
+
+/* Градиенты для цветовых схем */
+.bg-success-subtle {
+    background-color: rgba(29, 185, 84, 0.1) !important;
+}
+
+.bg-primary-subtle {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+.bg-purple-subtle {
+    background-color: rgba(155, 89, 182, 0.1) !important;
+}
+
+.bg-warning-subtle {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.bg-info-subtle {
+    background-color: rgba(23, 162, 184, 0.1) !important;
+}
+
+.bg-danger-subtle {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* Улучшенные стили для кнопок */
 .btn-success {
-    background-color: var(--accent-color) !important;
-    border-color: var(--accent-color) !important;
+    background: var(--accent-color);
+    border: none;
+    padding: 10px 24px;
+    font-weight: 600;
+    border-radius: 25px;
+    transition: all 0.3s ease;
 }
 
 .btn-success:hover {
-    background-color: var(--accent-hover) !important;
-    border-color: var(--accent-hover) !important;
+    background: #1ed760;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
 }
 
-/* Цвета для плейлистов на главной */
-.playlist-card.top-charts {
-    border-color: var(--accent-color) !important;
+.btn-outline-success {
+    border: 2px solid var(--accent-color);
+    color: var(--accent-color);
+    background: transparent;
+    padding: 10px 24px;
+    font-weight: 600;
+    border-radius: 25px;
+    transition: all 0.3s ease;
 }
 
-.playlist-card.top-charts .bi-fire {
-    color: var(--accent-color) !important;
+.btn-outline-success:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.3);
 }
 
-.playlist-card.new-releases {
-    border-color: #007bff !important;
+/* Текст */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.playlist-card.new-releases .bi-music-note-beamed {
-    color: #007bff !important;
+.text-truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.playlist-card.favorites {
-    border-color: #e83e8c !important;
+
+/* Дополнительные медиа-запросы для очень больших экранов */
+@media (min-width: 2000px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
 }
 
-.playlist-card.favorites .bi-heart-fill {
-    color: #e83e8c !important;
+@media (min-width: 2200px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(9, 1fr);
+    }
 }
 
-/* Лоадер */
-.spinner-border.text-success {
-    color: var(--accent-color) !important;
+/* Улучшенные стили для заголовков на разных экранах */
+@media (max-width: 1200px) {
+    .home-page .section-header h4 {
+        font-size: 1.5rem;
+    }
 }
 
-/* Анимация кнопки плей */
-@keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(var(--accent-rgb), 0); }
-    100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+@media (max-width: 768px) {
+    .home-page .section-header h4 {
+        font-size: 1.3rem;
+    }
+    
+    .home-page .section-header .section-subtitle {
+        font-size: 0.9rem;
+    }
 }
 
-#play-btn.playing {
-    animation: pulse 2s infinite;
+/* Стили для скролла в мобильных устройствах */
+@media (max-width: 768px) {
+    .home-page #track-grid {
+        padding-bottom: 80px; /* Для нижнего плеера */
+    }
+}
+
+/* Улучшенные тени для карточек */
+.home-page .card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.home-page .card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+/* Стили для текста песни в модальном окне */
+.home-page .lyrics-modal pre {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+/* Анимация загрузки */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.home-page .card.loading {
+    background: linear-gradient(90deg, #181818 25%, #222 50%, #181818 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+}
+
+/* Улучшенные стили для кнопок на мобильных устройствах */
+@media (max-width: 576px) {
+    .home-page .play-overlay-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .home-page .card-badge,
+    .home-page .chart-badge,
+    .home-page .new-badge,
+    .home-page .trending-badge {
+        font-size: 0.6rem;
+        padding: 3px 6px;
+        top: 8px;
+        left: 8px;
+    }
+}
+
+/* Стили для разделителей между секциями */
+.home-page .section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--accent-color) 15%, 
+        var(--accent-color) 85%, 
+        transparent 100%
+    );
+    opacity: 0.5;
 }
