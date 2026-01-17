@@ -1,1 +1,688 @@
+/* home.css - Стили для главной страницы Aurora - ИСПРАВЛЕННАЯ ВЕРСИЯ */
 
+/* Сброс стилей для главной страницы */
+.home-page #track-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Адаптивные колонки */
+@media (min-width: 1920px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(7, 1fr);
+    }
+}
+
+@media (min-width: 1600px) and (max-width: 1919px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+@media (min-width: 1400px) and (max-width: 1599px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        padding: 15px;
+    }
+}
+
+@media (max-width: 575px) {
+    .home-page #track-grid {
+        grid-template-columns: repeat(1, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+}
+
+/* Заголовки секций */
+.home-page .section-header {
+    grid-column: 1 / -1;
+    margin: 40px 0 25px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(29, 185, 84, 0.3);
+    position: relative;
+}
+
+.home-page .section-header:first-child {
+    margin-top: 0;
+}
+
+.home-page .section-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: var(--accent-color);
+    border-radius: 2px;
+}
+
+.home-page .section-header h4 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.home-page .section-header .section-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+/* Карточки для главной страницы - ЕДИНЫЙ СТИЛЬ ДЛЯ ВСЕХ */
+.home-page .card {
+    background: linear-gradient(145deg, var(--bg-card) 0%, #1a1a1a 100%);
+    border: 1px solid rgba(40, 40, 40, 0.5);
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    position: relative;
+}
+
+.home-page .card:hover {
+    background: linear-gradient(145deg, #282828 0%, #1e1e1e 100%);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border-color: var(--accent-color);
+}
+
+/* ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ КАРТОЧЕК */
+.home-page .card-img-container {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* Квадратное соотношение */
+    overflow: hidden;
+    background: linear-gradient(135deg, #1db954, #191414);
+}
+
+.home-page .card-img-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.home-page .card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+/* Оверлей с кнопкой воспроизведения - ОБЩИЙ ДЛЯ ВСЕХ */
+.home-page .play-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.home-page .card:hover .play-overlay {
+    opacity: 1;
+}
+
+.home-page .play-overlay-btn {
+    width: 48px;
+    height: 48px;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    transform: translateY(10px);
+    z-index: 3;
+}
+
+.home-page .card:hover .play-overlay-btn {
+    transform: translateY(0);
+    background: #1ed760;
+}
+
+/* Тело карточки - ОБЩЕЕ ДЛЯ ВСЕХ */
+.home-page .card-body {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-page .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 5px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+.home-page .card-text {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Бейджи для карточек - ОБЩИЕ */
+.home-page .card-badge, 
+.home-page .chart-badge, 
+.home-page .new-badge, 
+.home-page .trending-badge, 
+.home-page .position-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 3;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.home-page .card-badge {
+    background: rgba(29, 185, 84, 0.9);
+    color: white;
+}
+
+.home-page .chart-badge {
+    background: linear-gradient(45deg, rgba(255, 107, 107, 0.9), rgba(255, 167, 38, 0.9));
+    color: white;
+}
+
+.home-page .new-badge {
+    background: linear-gradient(45deg, rgba(52, 152, 219, 0.9), rgba(155, 89, 182, 0.9));
+    color: white;
+}
+
+.home-page .trending-badge {
+    background: linear-gradient(45deg, rgba(231, 76, 60, 0.9), rgba(243, 156, 18, 0.9));
+    color: white;
+}
+
+.home-page .position-badge {
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.8rem;
+}
+
+/* ОСОБЫЕ СТИЛИ ДЛЯ КАРТОЧЕК НАСТРОЕНИЯ */
+.home-page .mood-card {
+    background: linear-gradient(145deg, rgba(40, 40, 40, 0.8), rgba(30, 30, 30, 0.9));
+    border: 2px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 280px;
+}
+
+.home-page .mood-card .bi {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    display: block;
+    filter: drop-shadow(0 0 10px currentColor);
+}
+
+/* Цвета для карточек настроения */
+.home-page .mood-card.success {
+    border-color: rgba(29, 185, 84, 0.4);
+    background: linear-gradient(145deg, rgba(29, 185, 84, 0.1), rgba(29, 185, 84, 0.2));
+}
+
+.home-page .mood-card.primary {
+    border-color: rgba(0, 123, 255, 0.4);
+    background: linear-gradient(145deg, rgba(0, 123, 255, 0.1), rgba(0, 123, 255, 0.2));
+}
+
+.home-page .mood-card.purple {
+    border-color: rgba(155, 89, 182, 0.4);
+    background: linear-gradient(145deg, rgba(155, 89, 182, 0.1), rgba(155, 89, 182, 0.2));
+}
+
+.home-page .mood-card.warning {
+    border-color: rgba(255, 193, 7, 0.4);
+    background: linear-gradient(145deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.2));
+}
+
+.home-page .mood-card.info {
+    border-color: rgba(23, 162, 184, 0.4);
+    background: linear-gradient(145deg, rgba(23, 162, 184, 0.1), rgba(23, 162, 184, 0.2));
+}
+
+.home-page .mood-card.danger {
+    border-color: rgba(220, 53, 69, 0.4);
+    background: linear-gradient(145deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.2));
+}
+
+.home-page .mood-card.success .bi { color: #1db954 !important; }
+.home-page .mood-card.primary .bi { color: #007bff !important; }
+.home-page .mood-card.purple .bi { color: #9b59b6 !important; }
+.home-page .mood-card.warning .bi { color: #ffc107 !important; }
+.home-page .mood-card.info .bi { color: #17a2b8 !important; }
+.home-page .mood-card.danger .bi { color: #dc3545 !important; }
+
+/* Кнопки на главной странице */
+.home-page .add-track-btn {
+    width: 100%;
+    margin-top: auto;
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+}
+
+.home-page .add-track-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
+}
+
+.home-page .mood-playlist-btn,
+.home-page .local-playlist-btn {
+    margin-top: auto;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+}
+
+.home-page .mood-playlist-btn:hover,
+.home-page .local-playlist-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Кнопки в карточках настроения должны быть видны всегда */
+.home-page .mood-card .card-body {
+    padding: 25px 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-page .mood-card .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.home-page .mood-card .card-text {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.home-page .home-card-item {
+    animation: fadeInUp 0.5s ease forwards;
+    animation-delay: calc(var(--item-index) * 0.05s);
+    opacity: 0;
+}
+
+/* Улучшенные стили для текста */
+.home-page .text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+/* Стили для состояния загрузки */
+.home-page .loading-container {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: var(--text-secondary);
+}
+
+.home-page .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* Стили для уведомлений */
+.home-page .alert {
+    grid-column: 1 / -1;
+    background: rgba(40, 40, 40, 0.95);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    backdrop-filter: blur(15px);
+    padding: 20px;
+    border-left: 5px solid var(--accent-color);
+}
+
+/* Дополнительные медиа-запросы для лучшей адаптивности */
+@media (max-width: 1400px) {
+    .home-page #track-grid {
+        gap: 15px;
+    }
+    
+    .home-page .card {
+        min-height: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .home-page #track-grid {
+        gap: 12px;
+        padding: 15px;
+    }
+    
+    .home-page .card-body {
+        padding: 12px;
+    }
+    
+    .home-page .card-title {
+        font-size: 0.9rem;
+    }
+    
+    .home-page .card-text {
+        font-size: 0.8rem;
+    }
+    
+    .home-page .section-header h4 {
+        font-size: 1.3rem;
+    }
+    
+    .home-page .section-header .section-subtitle {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .home-page #track-grid {
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .home-page .card {
+        min-height: 220px;
+    }
+    
+    .home-page .card-body {
+        padding: 10px;
+    }
+    
+    .home-page .play-overlay-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .home-page .mood-card .bi {
+        font-size: 2rem;
+    }
+}
+
+/* Стили для разделителя секций */
+.home-page .section-divider {
+    grid-column: 1 / -1;
+    margin: 30px 0;
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+}
+
+/* Стили для пустой библиотеки */
+.home-page .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.home-page .empty-state .card {
+    background: rgba(40, 40, 40, 0.5);
+    border: 2px dashed var(--border-color);
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.home-page .empty-state .bi {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.6;
+    color: var(--accent-color);
+}
+
+.home-page .empty-state h4 {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Ховер эффект для карточек */
+.home-page .card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, transparent 0%, rgba(29, 185, 84, 0.1) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.home-page .card:hover::after {
+    opacity: 1;
+}
+
+/* Анимация пульсации для новых релизов */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.home-page .new-badge {
+    animation: pulse 2s infinite;
+}
+
+/* Стили для прогресс-бара на карточках */
+.home-page .progress {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.home-page .progress-bar {
+    background: linear-gradient(90deg, var(--accent-color), #1ed760);
+    transition: width 0.3s ease;
+}
+
+/* Стили для карточек локальной библиотеки */
+.home-page .local-library-card .card-body {
+    padding-bottom: 20px;
+}
+
+/* Улучшенные стили для кнопок на мобильных устройствах */
+@media (max-width: 576px) {
+    .home-page .play-overlay-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .home-page .card-badge,
+    .home-page .chart-badge,
+    .home-page .new-badge,
+    .home-page .trending-badge {
+        font-size: 0.6rem;
+        padding: 3px 6px;
+        top: 8px;
+        left: 8px;
+    }
+    
+    .home-page .mood-card .bi {
+        font-size: 1.8rem;
+    }
+}
+
+/* Стили для карточек релизов */
+.home-page .release-card .card-body {
+    padding-bottom: 20px;
+}
+
+/* Стили для карточек трендов */
+.home-page .trending-card .card-body {
+    padding-bottom: 20px;
+}
+
+/* Улучшенные стили для заголовков на разных экранах */
+@media (max-width: 1200px) {
+    .home-page .section-header h4 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Стили для очень маленьких экранов */
+@media (max-width: 375px) {
+    .home-page .section-header h4 {
+        font-size: 1.2rem;
+    }
+    
+    .home-page .section-header .section-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    .home-page .card-title {
+        font-size: 0.85rem;
+    }
+    
+    .home-page .card-text {
+        font-size: 0.75rem;
+    }
+    
+    .home-page .mood-card .card-title {
+        font-size: 1rem;
+    }
+}
+
+/* Стили для кнопки обновления рекомендаций */
+.home-page .refresh-btn {
+    margin-top: 20px;
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+}
+
+/* Стили для аватара в профиле */
+.home-page .profile-avatar {
+    border: 2px solid var(--accent-color);
+}
+
+/* Дополнительные стили для улучшенного UX */
+.home-page .card:active {
+    transform: translateY(-2px);
+    transition: transform 0.1s ease;
+}
+
+/* Эффект свечения для карточек */
+.home-page .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+}
+
+.home-page .card:hover::before {
+    opacity: 1;
+}
+
+/* Улучшенные тени для карточек */
+.home-page .card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.home-page .card:hover {
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
