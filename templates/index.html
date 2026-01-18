@@ -3,77 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora</title>
+    <title>Aurora - Музыкальный сервис</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/home.css">
 </head>
 <body class="bg-black text-light color-scheme-green">
     <div class="d-flex" style="height: calc(100vh - 95px);">
         <!-- Sidebar -->
         <div class="sidebar bg-dark d-flex flex-column">
-            <div class="p-4">
-                <div class="text-center mb-5">
-                    <svg width="160" height="60" viewBox="0 0 160 60" xmlns="http://www.w3.org/2000/svg">
+            <!-- Логотип -->
+            <div class="logo">
+                <div class="text-center">
+                    <svg width="180" height="50" viewBox="0 0 180 50" xmlns="http://www.w3.org/2000/svg">
                         <defs>
                             <linearGradient id="auroraGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="var(--accent-color)"/>
+                                <stop offset="0%" stop-color="#1db954"/>
                                 <stop offset="50%" stop-color="#00ffea"/>
                                 <stop offset="100%" stop-color="#a29bfe"/>
                             </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
                         </defs>
-                        <text x="80" y="40" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="url(#auroraGrad)" text-anchor="middle">Aurora</text>
+                        <text x="90" y="35" font-family="Arial, sans-serif" font-size="32" font-weight="bold" 
+                              fill="url(#auroraGrad)" text-anchor="middle" filter="url(#glow)">Aurora</text>
                     </svg>
                 </div>
-                <ul class="nav flex-column gap-3">
-                    <li class="nav-item"><a href="#" class="nav-link text-light active rounded-pill px-4 py-2" id="home-link"><i class="bi bi-house-door-fill me-3"></i>Главная</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link text-light rounded-pill px-4 py-2" id="search-link"><i class="bi bi-search me-3"></i>Поиск</a></li>
-                    <li class="nav-item"><a href="#" class="nav-link text-light rounded-pill px-4 py-2" id="library-link"><i class="bi bi-collection-play-fill me-3"></i>Ваша библиотека</a></li>
-                </ul>
-                
-                <hr class="border-secondary my-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="text-secondary small">ПЛЕЙЛИСТЫ</div>
-                    <button class="btn btn-sm btn-outline-light rounded-circle p-1" data-bs-toggle="modal" data-bs-target="#createPlaylistModal" title="Создать плейлист">
-                        <i class="bi bi-plus-lg"></i>
-                    </button>
-                </div>
-                <ul class="nav flex-column gap-2" id="playlists-list">
-                    <!-- Плейлисты будут добавлены JS -->
-                </ul>
             </div>
-            <div class="mt-auto p-4 border-top border-secondary">
-                <div class="dropup">
-                    <a class="d-flex align-items-center text-light dropdown-toggle text-decoration-none" href="#" role="button" data-bs-toggle="dropdown">
-                        <img id="profile-avatar" src="https://via.placeholder.com/40" class="rounded-circle me-3" style="width:40px;height:40px;object-fit:cover;">
-                        <span id="profile-name">Андрей</span>
+            
+            <!-- Основная навигация -->
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" id="home-link">
+                        <i class="bi bi-house-door-fill"></i>
+                        <span>Главная</span>
                     </a>
-                    <ul class="dropdown-menu bg-dark border-secondary">
-                        <li><a class="dropdown-item text-light" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">Профиль</a></li>
-                        <li><a class="dropdown-item text-light" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">Настройки</a></li>
-                        <li><hr class="dropdown-divider border-secondary"></li>
-                        <li><a class="dropdown-item text-light" href="#">Выйти</a></li>
-                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="search-link">
+                        <i class="bi bi-search"></i>
+                        <span>Поиск</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" id="library-link">
+                        <i class="bi bi-collection-play-fill"></i>
+                        <span>Ваша библиотека</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <hr class="border-secondary">
+            
+            <!-- Раздел плейлистов -->
+            <div class="playlists-title">
+                <span>ПЛЕЙЛИСТЫ</span>
+                <button class="btn btn-sm btn-outline-success rounded-circle p-0" 
+                        style="width: 26px; height: 26px;"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#createPlaylistModal" 
+                        title="Создать плейлист">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+            
+            <ul class="nav flex-column" id="playlists-list">
+                <!-- Плейлисты будут добавлены JS -->
+            </ul>
+            
+            <!-- Профиль -->
+            <!-- Профиль в сайдбаре -->
+            <div class="profile-section mt-auto" onclick="openProfileModal()">
+                <div class="profile-info">
+                    <img id="profile-avatar" src="https://ui-avatars.com/api/?name=Андрей&background=1db954&color=fff&size=150" 
+                        class="profile-avatar">
+                    <div>
+                        <div class="profile-name" id="profile-name">Андрей</div>
+                        <small class="text-secondary">Premium</small>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Main content -->
         <div class="flex-grow-1 d-flex flex-column overflow-hidden">
+            <!-- Шапка с поиском -->
             <div class="p-4 border-bottom border-secondary">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2 id="page-title" class="m-0">Главная</h2>
-                    <button class="btn btn-outline-light rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                    <button class="btn btn-success rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#uploadModal">
                         <i class="bi bi-upload me-2"></i>Загрузить треки
                     </button>
                 </div>
                 <div class="d-flex align-items-center" id="search-bar" style="display: none;">
-                    <input type="text" id="search-input" class="form-control bg-dark border-0 text-light rounded-pill px-4" placeholder="Поиск по YouTube Music...">
-                    <button class="btn btn-success rounded-pill ms-3 px-4" id="search-btn">Найти</button>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-0 text-secondary">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" id="search-input" class="form-control bg-dark border-0 text-light rounded-end-pill" 
+                               placeholder="Поиск по YouTube Music...">
+                        <button class="btn btn-success rounded-start-pill ms-2 px-4" id="search-btn">Найти</button>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Основной контент -->
             <div class="flex-grow-1 overflow-auto p-4">
-                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="track-grid"></div>
+                <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 row-cols-xl-6 g-4" id="track-grid"></div>
             </div>
         </div>
     </div>
@@ -82,38 +124,59 @@
     <div class="fixed-bottom player-container">
         <div class="container-fluid h-100">
             <div class="row player-row align-items-center h-100">
+                <!-- Информация о текущем треке -->
                 <div class="col-3 d-flex align-items-center">
-                    <img id="current-cover" src="" class="rounded me-3" style="width:60px;height:60px;object-fit:cover;">
+                    <img id="current-cover" src="https://via.placeholder.com/60x60/1db954/ffffff?text=A" 
+                         class="rounded me-3" style="width:60px;height:60px;object-fit:cover;">
                     <div class="text-truncate">
                         <div id="current-title" class="text-white fw-semibold text-truncate fs-5">Выберите трек</div>
                         <div id="current-artist" class="text-secondary small text-truncate"></div>
                     </div>
                 </div>
+                
+                <!-- Элементы управления -->
                 <div class="col-6 text-center">
                     <div class="d-flex justify-content-center align-items-center gap-4 mb-2">
-                        <button class="btn btn-link text-light" id="shuffle-btn"><i class="bi bi-shuffle fs-4"></i></button>
-                        <button class="btn btn-link text-light" id="prev-btn"><i class="bi bi-skip-start-fill fs-3"></i></button>
-                        <button class="btn rounded-circle shadow" id="play-btn"><i class="bi bi-play-fill fs-2"></i></button>
-                        <button class="btn btn-link text-light" id="next-btn"><i class="bi bi-skip-end-fill fs-3"></i></button>
-                        <button class="btn btn-link text-light" id="repeat-btn"><i class="bi bi-repeat fs-4"></i></button>
+                        <button class="btn btn-link text-light" id="shuffle-btn" title="Перемешать">
+                            <i class="bi bi-shuffle fs-4"></i>
+                        </button>
+                        <button class="btn btn-link text-light" id="prev-btn" title="Предыдущий трек">
+                            <i class="bi bi-skip-start-fill fs-3"></i>
+                        </button>
+                        <button class="btn rounded-circle shadow-lg" id="play-btn" title="Воспроизвести/Пауза">
+                            <i class="bi bi-play-fill fs-2"></i>
+                        </button>
+                        <button class="btn btn-link text-light" id="next-btn" title="Следующий трек">
+                            <i class="bi bi-skip-end-fill fs-3"></i>
+                        </button>
+                        <button class="btn btn-link text-light" id="repeat-btn" title="Повтор">
+                            <i class="bi bi-repeat fs-4"></i>
+                        </button>
                     </div>
                     <div class="player-progress">
                         <div class="d-flex align-items-center justify-content-center small">
                             <span id="current-time" class="text-secondary me-3">0:00</span>
-                            <input type="range" class="custom-range flex-grow-1" id="progress" min="0" max="100" value="0">
+                            <input type="range" class="custom-range flex-grow-1 mx-3" id="progress" min="0" max="100" value="0">
                             <span id="duration" class="text-secondary ms-3">0:00</span>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Громкость и скачивание -->
                 <div class="col-3 text-end d-flex align-items-center justify-content-end gap-3">
-                    <button class="btn btn-link text-light" id="volume-btn"><i class="bi bi-volume-up-fill fs-4"></i></button>
+                    <button class="btn btn-link text-light" id="volume-btn" title="Громкость">
+                        <i class="bi bi-volume-up-fill fs-4"></i>
+                    </button>
                     <input type="range" class="custom-range" style="width:130px;" id="volume" min="0" max="1" step="0.01" value="1">
-                    <a href="#" id="download-current" class="btn btn-outline-light btn-sm rounded-pill" style="display:none;">Скачать</a>
+                    <a href="#" id="download-current" class="btn btn-outline-light btn-sm rounded-pill px-3" style="display:none;">
+                        <i class="bi bi-download me-1"></i>Скачать
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Модальные окна -->
     <!-- Модал загрузки треков -->
     <div class="modal fade" id="uploadModal">
         <div class="modal-dialog modal-dialog-centered">
@@ -159,7 +222,8 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img id="profile-avatar-modal" src="https://via.placeholder.com/150" class="rounded-circle mb-3" style="width:150px;height:150px;object-fit:cover;">
+                    <img id="profile-avatar-modal" src="https://ui-avatars.com/api/?name=Андрей&background=1db954&color=fff&size=150" 
+                         class="rounded-circle mb-3" style="width:150px;height:150px;object-fit:cover;">
                     <h4 id="profile-name-modal">Андрей</h4>
                     <div class="mb-3 mt-3">
                         <label for="profile-name-input" class="form-label">Имя профиля</label>
@@ -312,17 +376,19 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-danger" id="delete-playlist-btn">Удалить плейлист</button>
-                    <button type="button" class="btn btn-success" id="save-playlist-btn">Сохранить</button>
+                    <button type="button" class="btn btn-danger rounded-pill" id="delete-playlist-btn">Удалить плейлист</button>
+                    <button type="button" class="btn btn-success rounded-pill" id="save-playlist-btn">Сохранить</button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Контейнер для тостов -->
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
     <audio id="player" preload="metadata"></audio>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/script.js"></script>
-    <script src="/static/js/settings.js"></script>
-    <script src="/static/js/profile.js"></script>
+    <Script src="/static/js/profile.js"></Script>
 </body>
 </html>
