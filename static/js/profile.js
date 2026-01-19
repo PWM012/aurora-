@@ -1,5 +1,9 @@
 // profile.js - Управление профилем
 
+// Глобальные переменные для экземпляров модальных окон
+let profileModalInstance = null;
+let customizationModalInstance = null;
+
 // Загрузка профиля из localStorage
 function loadProfile() {
     const name = localStorage.getItem('profileName') || 'Андрей';
@@ -97,9 +101,67 @@ function showNotification(message, type = 'info') {
 
 // Функция для открытия модалки профиля из сайдбара
 function openProfileModal() {
-    // Открываем модальное окно профиля
-    const profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
-    profileModal.show();
+    closeAllModals(); // Сначала закрываем все другие модалки
+    const modalElement = document.getElementById('profileModal');
+    if (!modalElement) return;
+    
+    // Создаем или получаем экземпляр модального окна
+    if (!profileModalInstance) {
+        profileModalInstance = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+    }
+    
+    // Обработчик для корректного закрытия
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        cleanupModalBackdrop();
+    });
+    
+    profileModalInstance.show();
+}
+
+// Функция для очистки backdrop модального окна
+function cleanupModalBackdrop() {
+    setTimeout(() => {
+        // Удаляем лишние backdrop
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        if (backdrops.length > 1) {
+            for (let i = 1; i < backdrops.length; i++) {
+                backdrops[i].remove();
+            }
+        }
+        
+        // Сбрасываем стили body если нет открытых модалок
+        const openModals = document.querySelectorAll('.modal.show');
+        if (openModals.length === 0) {
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+    }, 100);
+}
+
+// Функция для закрытия всех модальных окон
+function closeAllModals() {
+    // Закрываем все модальные окна Bootstrap
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+    
+    // Удаляем все backdrop
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    
+    // Сбрасываем стили body
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
 }
 
 // Инициализация при загрузке
@@ -166,12 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Показываем уведомление
                     showNotification('Имя профиля успешно сохранено!', 'success');
-                    
-                    // Закрываем модалку через 1 секунду
-                    setTimeout(() => {
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('profileModal'));
-                        if (modal) modal.hide();
-                    }, 1000);
                 } else {
                     showNotification('Введите имя профиля!', 'warning');
                 }
@@ -194,13 +250,9 @@ document.addEventListener('DOMContentLoaded', function() {
             loadProfile();
         });
         
-        // Сбрасываем поле ввода при закрытии
+        // Обработчик закрытия модалки
         profileModal.addEventListener('hidden.bs.modal', function() {
-            const nameInput = document.getElementById('profile-name-input');
-            if (nameInput) nameInput.value = '';
-            
-            const avatarInput = document.getElementById('avatar-input');
-            if (avatarInput) avatarInput.value = '';
+            cleanupModalBackdrop();
         });
     }
     
@@ -230,6 +282,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Глобальный обработчик для закрытия модалок по Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllModals();
+        }
+    });
 });
 
 // Функция для сброса профиля к значениям по умолчанию
@@ -239,6 +298,11 @@ function resetProfile() {
         localStorage.removeItem('profileAvatar');
         loadProfile();
         showNotification('Профиль сброшен к настройкам по умолчанию!', 'info');
+        
+        // Закрываем модалку профиля
+        if (profileModalInstance) {
+            profileModalInstance.hide();
+        }
     }
 }
 
@@ -315,6 +379,9 @@ function enhanceProfileModal() {
     const modalBody = document.querySelector('#profileModal .modal-body');
     if (!modalBody) return;
     
+    // Проверяем, не добавлены ли уже кнопки
+    if (modalBody.querySelector('.enhancement-buttons')) return;
+    
     // Добавляем разделитель
     const divider = document.createElement('hr');
     divider.className = 'border-secondary my-4';
@@ -322,7 +389,7 @@ function enhanceProfileModal() {
     
     // Создаем контейнер для дополнительных кнопок
     const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'd-flex flex-wrap gap-2 mt-3';
+    buttonsContainer.className = 'enhancement-buttons d-flex flex-wrap gap-2 mt-3';
     buttonsContainer.innerHTML = `
         <button class="btn btn-outline-warning btn-sm" onclick="resetProfile()" title="Сбросить профиль">
             <i class="bi bi-arrow-counterclockwise"></i> Сбросить
@@ -333,14 +400,540 @@ function enhanceProfileModal() {
         <button class="btn btn-outline-primary btn-sm" onclick="importProfileData()" title="Импорт данных">
             <i class="bi bi-upload"></i> Импорт
         </button>
+        <button class="btn btn-outline-success btn-sm" onclick="openCustomizationModal()" title="Настройки интерфейса">
+            <i class="bi bi-sliders"></i> Интерфейс
+        </button>
     `;
     
     modalBody.appendChild(buttonsContainer);
 }
 
-// Вызываем улучшение модалки при загрузке
+// Кастомизация плеера и интерфейса
+function openCustomizationModal() {
+    closeAllModals(); // Закрываем все модалки перед открытием новой
+    
+    const modalElement = document.getElementById('playerCustomizationModal');
+    if (!modalElement) return;
+    
+    // Создаем или получаем экземпляр модального окна
+    if (!customizationModalInstance) {
+        customizationModalInstance = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+    }
+    
+    // Обработчик для корректного закрытия
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        cleanupModalBackdrop();
+    });
+    
+    loadCustomizationSettings();
+    initVisualizerPreview();
+    customizationModalInstance.show();
+}
+
+function loadCustomizationSettings() {
+    // Загрузка настроек эквалайзера
+    const eqSettings = JSON.parse(localStorage.getItem('aurora_eq_settings') || '{}');
+    const defaultEq = {
+        enabled: false,
+        autoEq: false,
+        preset: 'flat',
+        bands: {
+            '32': 0, '64': 0, '125': 0, '250': 0, '500': 0,
+            '1000': 0, '2000': 0, '4000': 0, '8000': 0, '16000': 0
+        }
+    };
+    
+    const settings = { ...defaultEq, ...eqSettings };
+    
+    // Загрузка ползунков эквалайзера
+    document.querySelectorAll('.eq-slider').forEach(slider => {
+        const freq = slider.dataset.freq;
+        const value = settings.bands[freq] || 0;
+        slider.value = value;
+        const valueDisplay = document.getElementById(`eq-${freq}hz-value`);
+        if (valueDisplay) valueDisplay.textContent = `${value > 0 ? '+' : ''}${value}dB`;
+    });
+    
+    // Загрузка переключателей
+    const eqEnabled = document.getElementById('eq-enabled');
+    const autoEq = document.getElementById('auto-eq');
+    if (eqEnabled) eqEnabled.checked = settings.enabled;
+    if (autoEq) autoEq.checked = settings.autoEq;
+    
+    // Загрузка настроек интерфейса
+    const uiSettings = JSON.parse(localStorage.getItem('aurora_ui_settings') || '{}');
+    const defaultUI = {
+        density: 'normal',
+        borderRadius: 'medium',
+        shadowStyle: 'medium',
+        transparency: 0,
+        fontSize: 100,
+        compactPlayer: false,
+        blurEffects: true,
+        particlesEffects: false
+    };
+    
+    const ui = { ...defaultUI, ...uiSettings };
+    
+    // Установка значений интерфейса
+    const densityInput = document.querySelector(`input[name="density"][value="${ui.density}"]`);
+    const borderRadiusInput = document.querySelector(`input[name="border-radius"][value="${ui.borderRadius}"]`);
+    const shadowStyleInput = document.querySelector(`input[name="shadow-style"][value="${ui.shadowStyle}"]`);
+    
+    if (densityInput) densityInput.checked = true;
+    if (borderRadiusInput) borderRadiusInput.checked = true;
+    if (shadowStyleInput) shadowStyleInput.checked = true;
+    
+    const transparencySlider = document.getElementById('transparency-slider');
+    const transparencyValue = document.getElementById('transparency-value');
+    const fontSizeSlider = document.getElementById('font-size-slider');
+    const fontSizeValue = document.getElementById('font-size-value');
+    const compactPlayer = document.getElementById('compact-player');
+    const blurEffects = document.getElementById('blur-effects');
+    const particlesEffects = document.getElementById('particles-effects');
+    
+    if (transparencySlider) transparencySlider.value = ui.transparency;
+    if (transparencyValue) transparencyValue.textContent = `${ui.transparency}%`;
+    if (fontSizeSlider) fontSizeSlider.value = ui.fontSize;
+    if (fontSizeValue) fontSizeValue.textContent = `${ui.fontSize}%`;
+    if (compactPlayer) compactPlayer.checked = ui.compactPlayer;
+    if (blurEffects) blurEffects.checked = ui.blurEffects;
+    if (particlesEffects) particlesEffects.checked = ui.particlesEffects;
+    
+    // Загрузка настроек эффектов
+    const effectsSettings = JSON.parse(localStorage.getItem('aurora_effects_settings') || '{}');
+    const defaultEffects = {
+        visualizer: 'bars',
+        visualizerColor: '#1db954',
+        effectsIntensity: 50,
+        transitionEffect: 'fade',
+        parallaxEffect: 0,
+        pulseEffects: true,
+        glowEffects: false,
+        animationEffects: true
+    };
+    
+    const effects = { ...defaultEffects, ...effectsSettings };
+    
+    // Установка значений эффектов
+    const visualizerSelect = document.getElementById('visualizer-select');
+    const effectsIntensity = document.getElementById('effects-intensity');
+    const transitionEffects = document.getElementById('transition-effects');
+    const parallaxEffect = document.getElementById('parallax-effect');
+    const pulseEffects = document.getElementById('pulse-effects');
+    const glowEffects = document.getElementById('glow-effects');
+    const animationEffects = document.getElementById('animation-effects');
+    
+    if (visualizerSelect) visualizerSelect.value = effects.visualizer;
+    if (effectsIntensity) effectsIntensity.value = effects.effectsIntensity;
+    if (transitionEffects) transitionEffects.value = effects.transitionEffect;
+    if (parallaxEffect) parallaxEffect.value = effects.parallaxEffect;
+    if (pulseEffects) pulseEffects.checked = effects.pulseEffects;
+    if (glowEffects) glowEffects.checked = effects.glowEffects;
+    if (animationEffects) animationEffects.checked = effects.animationEffects;
+    
+    // Установка активного цвета
+    document.querySelectorAll('.color-option').forEach(option => {
+        option.classList.remove('active');
+        if (option.dataset.color === effects.visualizerColor) {
+            option.classList.add('active');
+        }
+    });
+}
+
+function saveCustomizationSettings() {
+    // Сохранение настроек эквалайзера
+    const eqSettings = {
+        enabled: document.getElementById('eq-enabled').checked,
+        autoEq: document.getElementById('auto-eq').checked,
+        preset: 'custom',
+        bands: {}
+    };
+    
+    document.querySelectorAll('.eq-slider').forEach(slider => {
+        const freq = slider.dataset.freq;
+        eqSettings.bands[freq] = parseInt(slider.value);
+    });
+    
+    localStorage.setItem('aurora_eq_settings', JSON.stringify(eqSettings));
+    
+    // Сохранение настроек интерфейса
+    const densityInput = document.querySelector('input[name="density"]:checked');
+    const borderRadiusInput = document.querySelector('input[name="border-radius"]:checked');
+    const shadowStyleInput = document.querySelector('input[name="shadow-style"]:checked');
+    
+    const uiSettings = {
+        density: densityInput ? densityInput.value : 'normal',
+        borderRadius: borderRadiusInput ? borderRadiusInput.value : 'medium',
+        shadowStyle: shadowStyleInput ? shadowStyleInput.value : 'medium',
+        transparency: parseInt(document.getElementById('transparency-slider').value),
+        fontSize: parseInt(document.getElementById('font-size-slider').value),
+        compactPlayer: document.getElementById('compact-player').checked,
+        blurEffects: document.getElementById('blur-effects').checked,
+        particlesEffects: document.getElementById('particles-effects').checked
+    };
+    
+    localStorage.setItem('aurora_ui_settings', JSON.stringify(uiSettings));
+    
+    // Сохранение настроек эффектов
+    const activeColor = document.querySelector('.color-option.active');
+    const effectsSettings = {
+        visualizer: document.getElementById('visualizer-select').value,
+        visualizerColor: activeColor ? activeColor.dataset.color : '#1db954',
+        effectsIntensity: parseInt(document.getElementById('effects-intensity').value),
+        transitionEffect: document.getElementById('transition-effects').value,
+        parallaxEffect: parseInt(document.getElementById('parallax-effect').value),
+        pulseEffects: document.getElementById('pulse-effects').checked,
+        glowEffects: document.getElementById('glow-effects').checked,
+        animationEffects: document.getElementById('animation-effects').checked
+    };
+    
+    localStorage.setItem('aurora_effects_settings', JSON.stringify(effectsSettings));
+    
+    // Применение настроек
+    applyCustomizationSettings();
+    
+    showNotification('Настройки сохранены!', 'success');
+}
+
+function applyCustomizationSettings() {
+    const uiSettings = JSON.parse(localStorage.getItem('aurora_ui_settings') || '{}');
+    const defaultUI = {
+        density: 'normal',
+        borderRadius: 'medium',
+        shadowStyle: 'medium',
+        transparency: 0,
+        fontSize: 100,
+        compactPlayer: false,
+        blurEffects: true,
+        particlesEffects: false
+    };
+    
+    const ui = { ...defaultUI, ...uiSettings };
+    
+    // Применение плотности
+    document.body.classList.remove('ui-density-compact', 'ui-density-normal', 'ui-density-spacious');
+    document.body.classList.add(`ui-density-${ui.density}`);
+    
+    // Применение скругления
+    document.body.classList.remove('ui-radius-none', 'ui-radius-small', 'ui-radius-medium', 'ui-radius-large');
+    document.body.classList.add(`ui-radius-${ui.borderRadius}`);
+    
+    // Применение теней
+    document.body.classList.remove('ui-shadow-none', 'ui-shadow-subtle', 'ui-shadow-medium', 'ui-shadow-heavy');
+    document.body.classList.add(`ui-shadow-${ui.shadowStyle}`);
+    
+    // Применение прозрачности
+    document.documentElement.style.setProperty('--ui-transparency', `${ui.transparency}%`);
+    
+    // Применение размера шрифта
+    document.documentElement.style.setProperty('--ui-font-size', `${ui.fontSize}%`);
+    
+    // Применение компактного плеера
+    if (ui.compactPlayer) {
+        document.body.classList.add('compact-player');
+    } else {
+        document.body.classList.remove('compact-player');
+    }
+    
+    // Применение размытия
+    if (ui.blurEffects) {
+        document.body.classList.add('blur-effects');
+    } else {
+        document.body.classList.remove('blur-effects');
+    }
+    
+    // Применение частиц
+    if (ui.particlesEffects) {
+        initParticles();
+    } else {
+        removeParticles();
+    }
+    
+    // Применение эффектов
+    applyEffectsSettings();
+}
+
+function applyEffectsSettings() {
+    const effectsSettings = JSON.parse(localStorage.getItem('aurora_effects_settings') || '{}');
+    const defaultEffects = {
+        visualizer: 'bars',
+        visualizerColor: '#1db954',
+        effectsIntensity: 50,
+        transitionEffect: 'fade',
+        parallaxEffect: 0,
+        pulseEffects: true,
+        glowEffects: false,
+        animationEffects: true
+    };
+    
+    const effects = { ...defaultEffects, ...effectsSettings };
+    
+    // Применение визуализатора
+    if (typeof window.initVisualizer === 'function') {
+        window.initVisualizer(effects.visualizer, effects.visualizerColor);
+    }
+    
+    // Применение пульсации
+    if (effects.pulseEffects) {
+        document.body.classList.add('pulse-effects');
+    } else {
+        document.body.classList.remove('pulse-effects');
+    }
+    
+    // Применение свечения
+    if (effects.glowEffects) {
+        document.body.classList.add('glow-effects');
+    } else {
+        document.body.classList.remove('glow-effects');
+    }
+    
+    // Применение анимаций
+    if (effects.animationEffects) {
+        document.body.classList.add('animation-effects');
+    } else {
+        document.body.classList.remove('animation-effects');
+    }
+    
+    // Применение параллакса
+    document.documentElement.style.setProperty('--parallax-intensity', effects.parallaxEffect);
+}
+
+function applyEqualizerPreset(preset) {
+    const presets = {
+        flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        pop: [3, 2, 1, 0, -1, 0, 2, 3, 2, 1],
+        rock: [4, 3, 2, 1, 0, 1, 2, 3, 2, 1],
+        jazz: [2, 1, 0, -1, 0, 1, 2, 1, 0, -1],
+        classical: [1, 0, -1, -2, -1, 0, 1, 2, 1, 0],
+        bass: [6, 5, 4, 3, 2, 1, 0, -1, -2, -3],
+        vocal: [-2, -1, 0, 2, 3, 4, 3, 1, 0, -1]
+    };
+    
+    const values = presets[preset] || presets.flat;
+    const frequencies = ['32', '64', '125', '250', '500', '1000', '2000', '4000', '8000', '16000'];
+    
+    frequencies.forEach((freq, index) => {
+        const slider = document.querySelector(`.eq-slider[data-freq="${freq}"]`);
+        if (slider) {
+            slider.value = values[index];
+            const valueDisplay = document.getElementById(`eq-${freq}hz-value`);
+            if (valueDisplay) {
+                valueDisplay.textContent = `${values[index] > 0 ? '+' : ''}${values[index]}dB`;
+            }
+        }
+    });
+}
+
+function initVisualizerPreview() {
+    const canvas = document.getElementById('visualizer-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    
+    function drawBars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const barCount = 50;
+        const barWidth = canvas.width / barCount;
+        
+        for (let i = 0; i < barCount; i++) {
+            const height = Math.sin(Date.now() / 1000 + i * 0.2) * 30 + 40;
+            const x = i * barWidth;
+            
+            // Градиентный цвет
+            const gradient = ctx.createLinearGradient(0, canvas.height - height, 0, canvas.height);
+            gradient.addColorStop(0, '#1db954');
+            gradient.addColorStop(1, '#0a8b38');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, canvas.height - height, barWidth - 1, height);
+        }
+    }
+    
+    function animate() {
+        drawBars();
+        animationId = requestAnimationFrame(animate);
+    }
+    
+    animate();
+    
+    // Очистка анимации при закрытии модалки
+    const modal = document.getElementById('playerCustomizationModal');
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
+    }
+}
+
+function initParticles() {
+    if (document.getElementById('particles-canvas')) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.id = 'particles-canvas';
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '-1';
+    document.body.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const particles = [];
+    const particleCount = 100;
+    
+    class Particle {
+        constructor() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.size = Math.random() * 2 + 0.5;
+            this.speedX = Math.random() * 0.5 - 0.25;
+            this.speedY = Math.random() * 0.5 - 0.25;
+            this.color = `rgba(29, 185, 84, ${Math.random() * 0.3 + 0.1})`;
+        }
+        
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            
+            if (this.x > canvas.width) this.x = 0;
+            if (this.x < 0) this.x = canvas.width;
+            if (this.y > canvas.height) this.y = 0;
+            if (this.y < 0) this.y = canvas.height;
+        }
+        
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
+    for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+    }
+    
+    function animateParticles() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(particle => {
+            particle.update();
+            particle.draw();
+        });
+        
+        requestAnimationFrame(animateParticles);
+    }
+    
+    animateParticles();
+    
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+}
+
+function removeParticles() {
+    const canvas = document.getElementById('particles-canvas');
+    if (canvas) {
+        canvas.remove();
+    }
+}
+
+// Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', function() {
+    loadProfile();
+    
+    // Улучшаем модалку профиля
     setTimeout(enhanceProfileModal, 100);
+    
+    // Инициализация слушателей событий для кастомизации
+    const customizationModal = document.getElementById('playerCustomizationModal');
+    if (customizationModal) {
+        // Сброс эквалайзера
+        const resetEqBtn = document.getElementById('reset-eq-btn');
+        if (resetEqBtn) {
+            resetEqBtn.addEventListener('click', () => {
+                applyEqualizerPreset('flat');
+            });
+        }
+        
+        // Предустановки эквалайзера
+        document.querySelectorAll('.eq-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                applyEqualizerPreset(preset);
+            });
+        });
+        
+        // Обновление значений эквалайзера
+        document.querySelectorAll('.eq-slider').forEach(slider => {
+            slider.addEventListener('input', function() {
+                const freq = this.dataset.freq;
+                const value = this.value;
+                const valueDisplay = document.getElementById(`eq-${freq}hz-value`);
+                if (valueDisplay) {
+                    valueDisplay.textContent = `${value > 0 ? '+' : ''}${value}dB`;
+                }
+            });
+        });
+        
+        // Обновление слайдеров
+        const transparencySlider = document.getElementById('transparency-slider');
+        const transparencyValue = document.getElementById('transparency-value');
+        if (transparencySlider && transparencyValue) {
+            transparencySlider.addEventListener('input', function() {
+                transparencyValue.textContent = `${this.value}%`;
+            });
+        }
+        
+        const fontSizeSlider = document.getElementById('font-size-slider');
+        const fontSizeValue = document.getElementById('font-size-value');
+        if (fontSizeSlider && fontSizeValue) {
+            fontSizeSlider.addEventListener('input', function() {
+                fontSizeValue.textContent = `${this.value}%`;
+            });
+        }
+        
+        // Выбор цвета
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.color-option').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Тест эффектов
+        const testEffectsBtn = document.getElementById('test-effects-btn');
+        if (testEffectsBtn) {
+            testEffectsBtn.addEventListener('click', function() {
+                const visualizer = document.getElementById('visualizer-select').value;
+                showNotification(`Тестируется визуализатор: ${visualizer}. Попробуйте воспроизвести музыку для проверки эффектов!`, 'info');
+            });
+        }
+        
+        // Сохранение настроек
+        const saveCustomizationBtn = document.getElementById('save-customization-btn');
+        if (saveCustomizationBtn) {
+            saveCustomizationBtn.addEventListener('click', saveCustomizationSettings);
+        }
+    }
+    
+    // Применяем настройки при загрузке
+    applyCustomizationSettings();
 });
 
 // Экспортируем функции для использования в других модулях
@@ -351,4 +944,7 @@ if (typeof window !== 'undefined') {
     window.exportProfileData = exportProfileData;
     window.importProfileData = importProfileData;
     window.updatePremiumStatus = updatePremiumStatus;
+    window.openCustomizationModal = openCustomizationModal;
+    window.applyCustomizationSettings = applyCustomizationSettings;
+    window.closeAllModals = closeAllModals;
 }
