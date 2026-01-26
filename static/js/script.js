@@ -1,3 +1,4 @@
+
 const audio = document.getElementById('player');
 const trackGrid = document.getElementById('track-grid');
 const progress = document.getElementById('progress');
@@ -6,7 +7,7 @@ const playlistsList = document.getElementById('playlists-list');
 let tracks = [];
 let currentIndex = -1;
 let shuffle = false;
-let repeat = false;
+let repeat = 0;
 let isYtSearch = false;
 let currentPlaylist = null;
 let currentPlaylistName = null;
@@ -18,12 +19,70 @@ let homeReleases = [];
 let homeCharts = [];
 let homeTrending = [];
 
+// Контроллеры для предзагрузки
+let prefetchController = null;
+let loadingOverlay = null;
+
+const shuffleBtn = document.getElementById('shuffle-btn');
+const repeatBtn = document.getElementById('repeat-btn');
+const playBtn = document.getElementById('play-btn');
+const nextBtn = document.getElementById('next-btn');
+const prevBtn = document.getElementById('prev-btn');
+const volumeBtn = document.getElementById('volume-btn');
+
 const placeholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMyODI4MjgiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSI5MCIgcj0iNDAiIGZpbGw9IiMxZGI5NTQiLz48cGF0aCBkPSJNODAgNjAgdjgwIiBzdHJva2U9IiMxZGI5NTQiIHN0cm9rZS13aWR0aD0iMjAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==';
+
+let isHomeLoading = false; 
+
+
+// Инициализация состояний кнопок
+function initPlayerButtons() {
+    // Сбрасываем состояния кнопок
+    shuffleBtn.classList.remove('active', 'text-success');
+    repeatBtn.classList.remove('active', 'text-success', 'repeat-one');
+    repeatBtn.innerHTML = '<i class="bi bi-repeat fs-4"></i>';
+    shuffleBtn.title = 'Включить перемешивание';
+    repeatBtn.title = 'Включить повтор';
+
+    shuffle = false;
+    repeat = 0;
+}
+
+// Обновление стиля кнопки перемешивания
+function updateShuffleButton() {
+    if (shuffle) {
+        shuffleBtn.classList.add('active', 'text-success');
+        shuffleBtn.title = 'Выключить перемешивание';
+    } else {
+        shuffleBtn.classList.remove('active', 'text-success');
+        shuffleBtn.title = 'Включить перемешивание';
+    }
+}
+
+// Обновление стиля кнопки повтора
+function updateRepeatButton() {
+    repeatBtn.classList.remove('active', 'text-success', 'repeat-one');
+    
+    if (repeat === 1) {
+        // Повтор плейлиста
+        repeatBtn.classList.add('active', 'text-success');
+        repeatBtn.innerHTML = '<i class="bi bi-repeat fs-4"></i>';
+        repeatBtn.title = 'Повтор плейлиста';
+    } else if (repeat === 2) {
+        // Повтор трека
+        repeatBtn.classList.add('active', 'text-success', 'repeat-one');
+        repeatBtn.innerHTML = '<i class="bi bi-repeat-1 fs-4"></i>';
+        repeatBtn.title = 'Повтор трека';
+    } else {
+        // Выключено
+        repeatBtn.innerHTML = '<i class="bi bi-repeat fs-4"></i>';
+        repeatBtn.title = 'Включить повтор';
+    }
+}
 
 // Инициализация цветов плеера
 function initPlayerColors() {
     setTimeout(() => {
-        const playBtn = document.getElementById('play-btn');
         if (playBtn) {
             const accentColor = getComputedStyle(document.documentElement)
                 .getPropertyValue('--accent-color').trim();
@@ -33,6 +92,7 @@ function initPlayerColors() {
         updateProgressFill();
         updateVolumeFill();
     }, 100);
+    initPlayerButtons();
 }
 
 function formatTime(sec) {
@@ -330,6 +390,9 @@ function renderTracks(data, yt = false) {
                     <p class="card-text text-secondary small text-truncate mb-2">${track.artist || 'Неизвестный артист'}</p>
                     <p class="text-secondary small mb-3">${formatTime(track.duration)}</p>
                     <div class="card-actions mt-auto">
+                        <button class="action-btn radio" data-tooltip="Радио" data-index="${i}" data-yt="${yt}">
+                            <i class="bi bi-radioactive"></i>
+                        </button>
                         <button class="action-btn lyrics" data-tooltip="Текст песни" data-title="${track.title}" data-artist="${track.artist}" data-videoid="${track.videoId || track.id || ''}">
                             <i class="bi bi-chat-left-text"></i>
                         </button>
@@ -351,6 +414,21 @@ function renderTracks(data, yt = false) {
                     playYtTrack(i);
                 } else {
                     playLocalTrack(i);
+                }
+            });
+        }
+
+        const radioBtn = col.querySelector('.radio');
+        if (radioBtn) {
+            radioBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const index = parseInt(radioBtn.dataset.index);
+                const isYt = radioBtn.dataset.yt === 'true';
+                const track = tracks[index];
+                
+                if (track) {
+                    createRadioFromTrack(track, isYt ? 'youtube' : 'local');
                 }
             });
         }
@@ -465,6 +543,8 @@ async function getLyrics(title, artist, videoId = '') {
 // ==================== ГЛАВНАЯ СТРАНИЦА ====================
 
 async function loadHome() {
+    if (isHomeLoading) return;
+    isHomeLoading = true;
     document.getElementById('search-bar').style.display = 'none';
     document.getElementById('page-title').textContent = 'Главная';
     currentPlaylist = null;
@@ -586,6 +666,12 @@ async function loadHome() {
                                 <div class="card-body">
                                     <h5 class="card-title text-truncate-2">${item.title}</h5>
                                     <p class="card-text">${item.artist || 'Исполнитель'}</p>
+                                    <button class="btn btn-sm btn-outline-info radio-btn home-radio-btn w-100 mt-2" 
+                                            data-videoid="${item.id}"
+                                            data-title="${item.title}"
+                                            data-artist="${item.artist}">
+                                        <i class="bi bi-radioactive me-1"></i> Радио
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -629,8 +715,14 @@ async function loadHome() {
                                 <h5 class="card-title text-truncate-2">${track.title}</h5>
                                 <p class="card-text">${track.artist}</p>
                                 <p class="text-secondary small">${formatTime(track.duration)}</p>
-                                <button class="btn btn-sm btn-outline-success add-track-btn release-add-btn w-100 mt-2" data-videoid="${track.id}">
+                                <button class="btn btn-sm btn-outline-success add-track-btn release-add-btn w-100 mt-1" data-videoid="${track.id}">
                                     <i class="bi bi-plus"></i> Добавить в библиотеку
+                                </button>
+                                <button class="btn btn-sm btn-outline-info radio-btn home-radio-btn w-100 mt-1" 
+                                        data-videoid="${track.id}"
+                                        data-title="${track.title}"
+                                        data-artist="${track.artist}">
+                                    <i class="bi bi-radioactive me-1"></i> Радио
                                 </button>
                             </div>
                         </div>
@@ -707,8 +799,14 @@ async function loadHome() {
                             <div class="card-body">
                                 <h5 class="card-title text-truncate-2">${track.title}</h5>
                                 <p class="card-text">${track.artist}</p>
-                                <button class="btn btn-sm btn-outline-success add-track-btn trending-add-btn w-100 mt-2" data-videoid="${track.id}">
+                                <button class="btn btn-sm btn-outline-success add-track-btn trending-add-btn w-100 mt-1" data-videoid="${track.id}">
                                     <i class="bi bi-plus"></i> Добавить
+                                </button>
+                                <button class="btn btn-sm btn-outline-info radio-btn home-radio-btn w-100 mt-1" 
+                                        data-videoid="${track.id}"
+                                        data-title="${track.title}"
+                                        data-artist="${track.artist}">
+                                    <i class="bi bi-radioactive me-1"></i> Радио
                                 </button>
                             </div>
                         </div>
@@ -772,9 +870,15 @@ async function loadHome() {
                                 <div class="card-body">
                                     <h5 class="card-title text-truncate-2">${track.title}</h5>
                                     <p class="card-text">${track.artist}</p>
-                                    <button class="btn btn-sm btn-outline-light w-100 mt-2 local-playlist-btn" 
+                                    <button class="btn btn-sm btn-outline-light w-100 mt-1 local-playlist-btn" 
                                             data-index="${localTracks.length - 1 - i}">
                                         <i class="bi bi-plus-circle"></i> В плейлист
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info radio-btn home-radio-btn w-100 mt-1" 
+                                            data-filename="${track.filename}"
+                                            data-title="${track.title}"
+                                            data-artist="${track.artist}">
+                                        <i class="bi bi-radioactive me-1"></i> Радио
                                     </button>
                                 </div>
                             </div>
@@ -784,13 +888,18 @@ async function loadHome() {
                 
                 // Добавляем локальные треки в конец
                 trackGrid.innerHTML += localHtml;
+                isHomeLoading = false;
             }
-        } catch (localErr) {
-            console.log('Ошибка загрузки локальных треков:', localErr);
+        } catch (error) {
+                console.error('Ошибка загрузки главной:', error);
+                isHomeLoading = false;
         }
         
         // Настраиваем обработчики событий ДЛЯ ВСЕХ КАРТОЧЕК
         setupHomeEventListeners();
+        
+        // Предзагружаем популярные треки
+        prefetchPopularTracks();
         
     } catch (error) {
         console.error('Ошибка загрузки главной:', error);
@@ -809,6 +918,84 @@ async function loadHome() {
                 </div>
             </div>
         `;
+    }
+}
+
+// Функции предзагрузки
+function prefetchNextTrack(videoId) {
+    // Отменяем предыдущую предзагрузку
+    if (prefetchController) {
+        prefetchController.abort();
+    }
+    
+    if (!videoId) return;
+    
+    // Создаем новый AbortController для текущей предзагрузки
+    prefetchController = new AbortController();
+    
+    fetch(`/prefetch_yt/${videoId}`, {
+        signal: prefetchController.signal
+    }).catch(err => {
+        if (err.name !== 'AbortError') {
+            console.log('Ошибка предзагрузки:', err);
+        }
+    });
+}
+
+function prefetchPopularTracks() {
+    // Предзагружаем первые 3 трека из каждой секции
+    const popularIds = [
+        ...(homeReleases || []).slice(0, 3).map(t => t.id),
+        ...(homeCharts || []).filter(t => t.type === 'track').slice(0, 3).map(t => t.id),
+        ...(homeTrending || []).slice(0, 3).map(t => t.id)
+    ];
+    
+    // Удаляем дубликаты
+    const uniqueIds = [...new Set(popularIds)];
+    
+    uniqueIds.forEach(videoId => {
+        if (videoId) {
+            fetch(`/prefetch_yt/${videoId}`).catch(() => {});
+        }
+    });
+}
+
+// Функции для отображения загрузки
+function showLoadingProgress(trackTitle) {
+    // Удаляем старый индикатор, если есть
+    hideLoadingProgress();
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'loading-overlay';
+    overlay.innerHTML = `
+        <div class="loading-overlay-content">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+            <p class="mt-3">Загружаем: ${trackTitle}</p>
+            <div class="progress mt-2" style="width: 200px">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    // Симуляция прогресса
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 10;
+        const bar = overlay.querySelector('.progress-bar');
+        if (bar) bar.style.width = `${progress}%`;
+        if (progress >= 90) clearInterval(interval);
+    }, 200);
+    
+    loadingOverlay = overlay;
+}
+
+function hideLoadingProgress() {
+    if (loadingOverlay) {
+        loadingOverlay.remove();
+        loadingOverlay = null;
     }
 }
 
@@ -879,70 +1066,29 @@ function setupHomeEventListeners() {
         if (e._processed) return;
         e._processed = true;
         
-        // Обработка кнопок воспроизведения плейлистов
-        const playlistPlayBtn = e.target.closest('.playlist-play-btn');
-        if (playlistPlayBtn) {
+        // Обработка кнопок радио на главной странице
+        const radioBtn = e.target.closest('.home-radio-btn');
+        if (radioBtn) {
             e.stopPropagation();
             e.preventDefault();
-            const playlistId = playlistPlayBtn.dataset.playlistId;
-            const playlistTitle = playlistPlayBtn.dataset.playlistTitle || 'Плейлист';
-            loadYouTubePlaylist(playlistId, playlistTitle);
-            return;
-        }
-        
-        // Обработка кнопок воспроизведения треков из чартов
-        const chartTrackBtn = e.target.closest('.chart-track-play-btn');
-        if (chartTrackBtn) {
-            e.stopPropagation();
-            e.preventDefault();
-            const videoId = chartTrackBtn.dataset.videoid;
-            const title = chartTrackBtn.dataset.title;
-            const artist = chartTrackBtn.dataset.artist;
-            playYtTrackFromHome(videoId, title, artist);
-            return;
-        }
-        
-        // Обработка кнопок воспроизведения новых релизов
-        const releaseTrackBtn = e.target.closest('.release-track-play-btn');
-        if (releaseTrackBtn) {
-            e.stopPropagation();
-            e.preventDefault();
-            const videoId = releaseTrackBtn.dataset.videoid;
-            const title = releaseTrackBtn.dataset.title;
-            const artist = releaseTrackBtn.dataset.artist;
-            const duration = releaseTrackBtn.dataset.duration;
-            const thumbnail = releaseTrackBtn.dataset.thumbnail;
-            playYtTrackFromHome(videoId, title, artist, duration, thumbnail);
-            return;
-        }
-        
-        // Обработка кнопок воспроизведения трендов
-        const trendingTrackBtn = e.target.closest('.trending-track-play-btn');
-        if (trendingTrackBtn) {
-            e.stopPropagation();
-            e.preventDefault();
-            const videoId = trendingTrackBtn.dataset.videoid;
-            const title = trendingTrackBtn.dataset.title;
-            const artist = trendingTrackBtn.dataset.artist;
-            playYtTrackFromHome(videoId, title, artist);
-            return;
-        }
-        
-        // Обработка кнопок воспроизведения локальных треков
-        const localTrackBtn = e.target.closest('.local-track-play-btn');
-        if (localTrackBtn) {
-            e.stopPropagation();
-            e.preventDefault();
-            const filename = localTrackBtn.dataset.filename;
-            fetch('/tracks')
-                .then(r => r.json())
-                .then(allTracks => {
-                    const index = allTracks.findIndex(t => t.filename === filename);
-                    if (index !== -1) {
-                        tracks = allTracks;
-                        playLocalTrack(index);
-                    }
-                });
+            const videoId = radioBtn.dataset.videoid;
+            const filename = radioBtn.dataset.filename;
+            const title = radioBtn.dataset.title;
+            const artist = radioBtn.dataset.artist;
+            
+            if (videoId) {
+                createRadioFromTrack({ 
+                    videoId: videoId, 
+                    title: title, 
+                    artist: artist 
+                }, 'youtube');
+            } else if (filename) {
+                createRadioFromTrack({ 
+                    filename: filename, 
+                    title: title, 
+                    artist: artist 
+                }, 'local');
+            }
             return;
         }
         
@@ -1027,7 +1173,7 @@ function setupHomeEventListeners() {
             e.stopPropagation();
             e.preventDefault();
             
-            // Для локальных треков
+            // Для локальных треки
             if (trackCard.classList.contains('local-library-card')) {
                 const playBtn = trackCard.querySelector('.local-track-play-btn');
                 if (playBtn) {
@@ -1067,6 +1213,16 @@ function setupHomeEventListeners() {
                     playYtTrackFromHome(videoId, title, artist);
                 }
             }
+            return;
+        }
+
+        const playlistPlayBtn = e.target.closest('.playlist-play-btn');
+        if (playlistPlayBtn) {
+            e.stopPropagation();
+            e.preventDefault();
+            const playlistId = playlistPlayBtn.dataset.playlistId;
+            const playlistTitle = playlistPlayBtn.dataset.playlistTitle || 'Плейлист';
+            loadYouTubePlaylist(playlistId, playlistTitle);
             return;
         }
         
@@ -1148,6 +1304,11 @@ async function loadYouTubePlaylist(playlistId, playlistTitle = 'Плейлист
             `;
             
             trackGrid.insertBefore(playlistInfo, trackGrid.firstChild);
+            
+            // Предзагружаем первый трек
+            if (tracks.length > 0 && tracks[0].videoId) {
+                prefetchNextTrack(tracks[0].videoId);
+            }
             
         } else {
             throw new Error(data.error || 'Не удалось загрузить плейлист');
@@ -1295,7 +1456,6 @@ function playLocalTrack(idx) {
         }
         
         // Обновляем кнопку плей
-        const playBtn = document.getElementById('play-btn');
         if (playBtn) {
             playBtn.innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
             playBtn.classList.add('playing');
@@ -1320,35 +1480,61 @@ function playYtTrack(idx) {
         return;
     }
     
+    // Показываем индикатор загрузки
+    showLoadingProgress(track.title);
+    
+    // Предзагрузка следующего трека
+    if (tracks[idx + 1]) {
+        const nextTrack = tracks[idx + 1];
+        const nextVideoId = nextTrack.videoId || nextTrack.id;
+        if (nextVideoId) {
+            setTimeout(() => prefetchNextTrack(nextVideoId), 1000);
+        }
+    }
+    
     audio.src = `/yt_stream/${videoId}`;
-    audio.play().then(() => {
-        updatePlayerUI({
-            title: track.title,
-            artist: track.artist,
-            cover: track.thumbnail || placeholder,
-            duration: track.duration
+    
+    // Обработчики событий для скрытия индикатора
+    const onCanPlay = () => {
+        hideLoadingProgress();
+        audio.play().then(() => {
+            updatePlayerUI({
+                title: track.title,
+                artist: track.artist,
+                cover: track.thumbnail || placeholder,
+                duration: track.duration
+            });
+            
+            const downloadBtn = document.getElementById('download-current');
+            if (downloadBtn) {
+                downloadBtn.style.display = 'none';
+            }
+            
+            updateProgressFill();
+            
+            if (playBtn) {
+                playBtn.innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
+                playBtn.classList.add('playing');
+                playBtn.classList.remove('paused');
+            }
+            
+            showToast(`Сейчас играет: ${track.title}`, 'info');
+        }).catch(error => {
+            console.error('Ошибка воспроизведения:', error);
+            showToast('Ошибка воспроизведения трека с YouTube', 'danger');
         });
-        
-        const downloadBtn = document.getElementById('download-current');
-        if (downloadBtn) {
-            downloadBtn.style.display = 'none';
-        }
-        
-        updateProgressFill();
-        
-        // Обновляем кнопку плей
-        const playBtn = document.getElementById('play-btn');
-        if (playBtn) {
-            playBtn.innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
-            playBtn.classList.add('playing');
-            playBtn.classList.remove('paused');
-        }
-        
-        showToast(`Сейчас играет: ${track.title}`, 'info');
-    }).catch(error => {
-        console.error('Ошибка воспроизведения:', error);
-        showToast('Ошибка воспроизведения трека с YouTube', 'danger');
-    });
+    };
+    
+    const onError = () => {
+        hideLoadingProgress();
+        showToast('Ошибка загрузки трека', 'danger');
+    };
+    
+    audio.addEventListener('canplay', onCanPlay, { once: true });
+    audio.addEventListener('error', onError, { once: true });
+    
+    // Загружаем аудио
+    audio.load();
 }
 
 function updatePlayerUI(track) {
@@ -1363,7 +1549,6 @@ function updatePlayerUI(track) {
     if (durationElement) durationElement.textContent = formatTime(track.duration);
     
     // Обновляем цвет кнопки плей
-    const playBtn = document.getElementById('play-btn');
     if (playBtn) {
         const accentColor = getComputedStyle(document.documentElement)
             .getPropertyValue('--accent-color').trim();
@@ -1395,11 +1580,10 @@ if (volume) {
     volume.addEventListener('input', (e) => {
         audio.volume = e.target.value;
         updateVolumeFill();
-        const icon = document.getElementById('volume-btn');
-        if (icon) {
-            if (audio.volume === 0) icon.innerHTML = '<i class="bi bi-volume-mute-fill fs-4"></i>';
-            else if (audio.volume < 0.5) icon.innerHTML = '<i class="bi bi-volume-down-fill fs-4"></i>';
-            else icon.innerHTML = '<i class="bi bi-volume-up-fill fs-4"></i>';
+        if (volumeBtn) {
+            if (audio.volume === 0) volumeBtn.innerHTML = '<i class="bi bi-volume-mute-fill fs-4"></i>';
+            else if (audio.volume < 0.5) volumeBtn.innerHTML = '<i class="bi bi-volume-down-fill fs-4"></i>';
+            else volumeBtn.innerHTML = '<i class="bi bi-volume-up-fill fs-4"></i>';
         }
     });
 }
@@ -1408,7 +1592,7 @@ if (audio) {
     audio.addEventListener('volumechange', updateVolumeFill);
 }
 
-const playBtn = document.getElementById('play-btn');
+// Обработчик кнопки Play/Pause
 if (playBtn) {
     playBtn.addEventListener('click', () => {
         if (audio && audio.src) {
@@ -1432,7 +1616,6 @@ if (playBtn) {
 
 if (audio) {
     audio.addEventListener('play', () => {
-        const playBtn = document.getElementById('play-btn');
         if (playBtn) {
             playBtn.innerHTML = '<i class="bi bi-pause-fill fs-2"></i>';
             playBtn.classList.add('playing');
@@ -1441,7 +1624,6 @@ if (audio) {
     });
 
     audio.addEventListener('pause', () => {
-        const playBtn = document.getElementById('play-btn');
         if (playBtn) {
             playBtn.innerHTML = '<i class="bi bi-play-fill fs-2"></i>';
             playBtn.classList.add('paused');
@@ -1450,58 +1632,120 @@ if (audio) {
     });
 }
 
-const nextBtn = document.getElementById('next-btn');
+// Обработчик кнопки Next
 if (nextBtn) {
     nextBtn.addEventListener('click', () => {
         if (tracks.length === 0) return;
-        let next = currentIndex + 1;
-        if (shuffle) next = Math.floor(Math.random() * tracks.length);
-        if (next >= tracks.length) next = 0;
-        if (tracks[next]) {
-            isYtSearch ? playYtTrack(next) : playLocalTrack(next);
+        
+        let nextIndex;
+        
+        if (shuffle) {
+            // Генерация случайного индекса, отличного от текущего
+            do {
+                nextIndex = Math.floor(Math.random() * tracks.length);
+            } while (tracks.length > 1 && nextIndex === currentIndex);
+        } else {
+            nextIndex = currentIndex + 1;
+            if (nextIndex >= tracks.length) {
+                if (repeat === 1) {
+                    nextIndex = 0; // Зацикливание плейлиста
+                } else {
+                    // Остановить воспроизведение
+                    audio.pause();
+                    if (playBtn) {
+                        playBtn.innerHTML = '<i class="bi bi-play-fill fs-2"></i>';
+                        playBtn.classList.add('paused');
+                        playBtn.classList.remove('playing');
+                    }
+                    return;
+                }
+            }
+        }
+        
+        if (tracks[nextIndex]) {
+            isYtSearch ? playYtTrack(nextIndex) : playLocalTrack(nextIndex);
         }
     });
 }
 
-const prevBtn = document.getElementById('prev-btn');
+// Обработчик кнопки Prev
 if (prevBtn) {
     prevBtn.addEventListener('click', () => {
         if (tracks.length === 0) return;
-        let prev = currentIndex - 1;
-        if (prev < 0) prev = tracks.length - 1;
-        if (tracks[prev]) {
-            isYtSearch ? playYtTrack(prev) : playLocalTrack(prev);
+        
+        let prevIndex = currentIndex - 1;
+        if (prevIndex < 0) {
+            if (repeat === 1) {
+                prevIndex = tracks.length - 1; // Зацикливание плейлиста
+            } else {
+                // Если это первый трек и повтор не включен - начинаем сначала
+                audio.currentTime = 0;
+                if (audio.paused) {
+                    audio.play();
+                }
+                return;
+            }
+        }
+        
+        if (tracks[prevIndex]) {
+            isYtSearch ? playYtTrack(prevIndex) : playLocalTrack(prevIndex);
         }
     });
 }
 
-const shuffleBtn = document.getElementById('shuffle-btn');
+// Обработчик кнопки Shuffle
 if (shuffleBtn) {
     shuffleBtn.addEventListener('click', () => {
         shuffle = !shuffle;
-        shuffleBtn.classList.toggle('text-success', shuffle);
-        showToast(shuffle ? 'Перемешивание включено' : 'Перемешивание выключено', 'info');
+        updateShuffleButton();
+        
+        if (shuffle) {
+            showToast('Перемешивание включено', 'success');
+        } else {
+            showToast('Перемешивание выключено', 'info');
+        }
     });
 }
 
-const repeatBtn = document.getElementById('repeat-btn');
+// Обработчик кнопки Repeat
 if (repeatBtn) {
     repeatBtn.addEventListener('click', () => {
-        repeat = !repeat;
-        repeatBtn.classList.toggle('text-success', repeat);
-        showToast(repeat ? 'Повтор включен' : 'Повтор выключен', 'info');
+        repeat = (repeat + 1) % 3; // 0→1→2→0
+        updateRepeatButton();
+        
+        // Показать сообщение
+        const messages = ['Повтор выключен', 'Повтор плейлиста', 'Повтор трека'];
+        showToast(messages[repeat], 'info');
     });
 }
 
 if (audio) {
     audio.addEventListener('ended', () => {
-        if (repeat) {
+        if (repeat === 2) {
+            // Повтор трека
             audio.currentTime = 0;
             audio.play();
+        } else if (repeat === 1) {
+            // Повтор плейлиста - следующий трек, если последний - первый
+            if (nextBtn) nextBtn.click();
         } else {
-            const nextBtn = document.getElementById('next-btn');
+            // Без повтора - следующий трек
             if (nextBtn) nextBtn.click();
         }
+    });
+}
+
+// Обработчик кнопки громкости
+if (volumeBtn) {
+    volumeBtn.addEventListener('click', () => {
+        if (audio.volume > 0) {
+            audio.volume = 0;
+            volume.value = 0;
+        } else {
+            audio.volume = 1;
+            volume.value = 1;
+        }
+        updateVolumeFill();
     });
 }
 
@@ -1700,6 +1944,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPlaylists();
     updateVolumeFill();
     updateProgressFill();
+    updateShuffleButton();
+    updateRepeatButton();
     
     if (progress) progress.value = 0;
     if (volume) volume.value = 1;
@@ -1744,4 +1990,81 @@ document.getElementById('refresh-home-cache')?.addEventListener('click', async f
 window.addEventListener('beforeunload', () => {
     const playlists = getPlaylists();
     savePlaylists(playlists);
+});
+
+// Функция создания радио на основе трека
+async function createRadioFromTrack(track, trackType = 'local') {
+    let trackId;
+    if (trackType === 'local') {
+        trackId = track.filename;
+    } else if (trackType === 'youtube') {
+        trackId = track.videoId || track.id;
+    } else {
+        showToast('Неизвестный тип трека', 'danger');
+        return;
+    }
+
+    showToast('Создаём радио...', 'info');
+
+    try {
+        const endpoint = trackType === 'local' ? `/api/radio_local/${trackId}` : `/api/radio_yt/${trackId}`;
+        const response = await fetch(endpoint);
+        const data = await response.json();
+
+        if (data.error) {
+            showToast(data.error, 'danger');
+            return;
+        }
+
+        // Переключаем плеер в режим радио
+        tracks = data.tracks;
+        currentPlaylistName = data.station_name || `Радио: ${track.title}`;
+        currentPlaylist = null;
+        isYtSearch = (trackType === 'youtube');
+
+        document.getElementById('page-title').textContent = currentPlaylistName;
+
+        // Рендерим треки
+        renderTracks(tracks, trackType === 'youtube');
+
+        showToast(`${currentPlaylistName} готово! ${tracks.length} треков`, 'success');
+
+        // Начинаем играть с первого трека
+        if (trackType === 'local') {
+            playLocalTrack(0);
+        } else {
+            playYtTrack(0);
+        }
+    } catch (error) {
+        console.error(error);
+        showToast('Ошибка создания радио', 'danger');
+    }
+}
+
+// Delegation для кнопок радио (работает везде, без дублирования)
+document.getElementById('track-grid').addEventListener('click', (e) => {
+    const radioBtn = e.target.closest('.radio-btn');
+    if (radioBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const filename = radioBtn.dataset.filename;
+        const trackType = radioBtn.dataset.trackType || 'local';
+        
+        let track;
+        if (trackType === 'local') {
+            track = tracks.find(t => t.filename === filename);
+        } else if (trackType === 'youtube') {
+            // Для YouTube треков — если есть videoId в data-videoid или другом атрибуте
+            const card = radioBtn.closest('.col');
+            track = {
+                videoId: card.querySelector('[data-videoid]')?.dataset.videoid || '',
+                title: card.querySelector('.card-title')?.textContent,
+                artist: card.querySelector('.card-text')?.textContent
+            };
+        }
+        
+        if (track) {
+            createRadioFromTrack(track, trackType);
+        }
+    }
 });
