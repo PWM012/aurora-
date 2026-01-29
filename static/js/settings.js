@@ -1,34 +1,36 @@
-// settings.js - Управление настройками приложения
+// settings.js - Настройки в стиле Spotify (мгновенное применение)
 
-// Загрузка настроек из localStorage
 function loadSettings() {
     const defaultSettings = {
         darkTheme: true,
         colorScheme: 'green',
         sortTracks: 'title',
-        autoplay: 'always',
         notifications: true,
-        autoPlayOnStart: true,
         showLyrics: false,
         tracksPerPage: 30,
         cacheCovers: true,
-        highQuality: false
+        crossfadeDuration: 0,
+        normalizeVolume: true,
+        gaplessPlayback: true,
+        autoplaySimilar: true,
+        streamingQuality: 'high',
+        fontSize: 'normal'
     };
     
-    const savedSettings = JSON.parse(localStorage.getItem('aurora_settings') || '{}');
-    return { ...defaultSettings, ...savedSettings };
+    const saved = JSON.parse(localStorage.getItem('aurora_settings') || '{}');
+    return { ...defaultSettings, ...saved };
 }
 
-// Сохранение настроек в localStorage
 function saveSettings(settings) {
     localStorage.setItem('aurora_settings', JSON.stringify(settings));
     applySettings(settings);
 }
 
-// Применение настроек
 function applySettings(settings) {
-    // Тема
     const body = document.body;
+    const root = document.documentElement;
+
+    // Тема
     if (settings.darkTheme) {
         body.classList.remove('bg-light', 'text-dark');
         body.classList.add('bg-black', 'text-light');
@@ -36,297 +38,193 @@ function applySettings(settings) {
         body.classList.remove('bg-black', 'text-light');
         body.classList.add('bg-light', 'text-dark');
     }
-    
+
     // Цветовая схема
-    document.body.className = document.body.className.replace(/color-scheme-\w+/g, '');
-    document.body.classList.add(`color-scheme-${settings.colorScheme}`);
-    
-    // Устанавливаем переменные для RGB значений
+    body.className = body.className.replace(/color-scheme-\w+/g, '');
+    body.classList.add(`color-scheme-${settings.colorScheme}`);
     setAccentRGB(settings.colorScheme);
-    
-    // Обновляем кнопку плей
+
+    // Размер шрифта
+    const fontSizes = { small: '14px', normal: '16px', large: '18px' };
+    root.style.setProperty('--base-font-size', fontSizes[settings.fontSize]);
+
+    // Обновление цветов плеера и ползунков
     updatePlayButtonColor();
-    
-    // Обновляем ползунки
     updateSliderColors();
-    
-    // Количество треков на странице
+
+    // Глобальные переменные
     window.tracksPerPage = settings.tracksPerPage;
-    
-    // Если включено автовоспроизведение при запуске
-    if (settings.autoPlayOnStart && window.tracks && window.tracks.length > 0 && window.currentIndex === -1) {
-        setTimeout(() => {
-            playLocalTrack(0);
-        }, 1000);
+    window.streamingQuality = settings.streamingQuality; // можно использовать в функциях загрузки треков
+
+    // Пересортировка (если на странице библиотеки)
+    if (typeof renderTracks === 'function' && window.tracks) {
+        const sorted = sortTracks(window.tracks, settings.sortTracks);
+        renderTracks(sorted, window.isYtSearch || false);
     }
-    
-    return settings;
 }
 
-// Установка RGB значений акцентного цвета
-function setAccentRGB(colorScheme) {
-    const colorMap = {
-        'green': '29, 185, 84',
-        'blue': '0, 123, 255',
-        'purple': '111, 66, 193',
-        'red': '220, 53, 69',
-        'orange': '253, 126, 20',
-        'pink': '232, 62, 140'
+function setAccentRGB(scheme) {
+    const map = {
+        green: '29, 185, 84',
+        blue: '0, 123, 255',
+        purple: '111, 66, 193',
+        red: '220, 53, 69',
+        orange: '253, 126, 20',
+        pink: '232, 62, 140'
     };
-    
-    const rgbValue = colorMap[colorScheme] || '29, 185, 84';
-    document.documentElement.style.setProperty('--accent-rgb', rgbValue);
+    document.documentElement.style.setProperty('--accent-rgb', map[scheme] || '29, 185, 84');
 }
 
-// Обновление цвета кнопки плей
 function updatePlayButtonColor() {
-    const playButton = document.getElementById('play-btn');
-    if (!playButton) return;
-    
-    // Получаем текущий акцентный цвет
-    const accentColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--accent-color').trim();
-    
-    const accentHover = getComputedStyle(document.documentElement)
-        .getPropertyValue('--accent-hover').trim();
-    
-    const accentRGB = getComputedStyle(document.documentElement)
-        .getPropertyValue('--accent-rgb').trim();
-    
-    // Применяем цвет к кнопке
-    playButton.style.backgroundColor = accentColor;
-    playButton.style.borderColor = accentColor;
-    playButton.style.boxShadow = `0 4px 12px rgba(${accentRGB}, 0.3)`;
-    
-    // Обновляем ховер эффект
-    const originalHover = playButton.onmouseenter;
-    const originalLeave = playButton.onmouseleave;
-    
-    playButton.onmouseenter = function() {
-        this.style.backgroundColor = accentHover;
-        this.style.borderColor = accentHover;
-        this.style.boxShadow = `0 6px 16px rgba(${accentRGB}, 0.4)`;
-        if (originalHover) originalHover.call(this);
+    const btn = document.getElementById('play-btn');
+    if (!btn) return;
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+    const hover = getComputedStyle(document.documentElement).getPropertyValue('--accent-hover').trim();
+    const rgb = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim();
+
+    btn.style.backgroundColor = accent;
+    btn.style.borderColor = accent;
+    btn.style.boxShadow = `0 4px 12px rgba(${rgb}, 0.3)`;
+
+    btn.onmouseenter = () => {
+        btn.style.backgroundColor = hover;
+        btn.style.borderColor = hover;
+        btn.style.boxShadow = `0 6px 16px rgba(${rgb}, 0.4)`;
     };
-    
-    playButton.onmouseleave = function() {
-        this.style.backgroundColor = accentColor;
-        this.style.borderColor = accentColor;
-        this.style.boxShadow = `0 4px 12px rgba(${accentRGB}, 0.3)`;
-        if (originalLeave) originalLeave.call(this);
+    btn.onmouseleave = () => {
+        btn.style.backgroundColor = accent;
+        btn.style.borderColor = accent;
+        btn.style.boxShadow = `0 4px 12px rgba(${rgb}, 0.3)`;
     };
 }
 
-// Обновление цвета ползунков
 function updateSliderColors() {
-    const accentColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--accent-color').trim();
-    
-    // Обновляем все ползунки
-    const sliders = document.querySelectorAll('.custom-range');
-    sliders.forEach(slider => {
-        slider.style.setProperty('--accent-color', accentColor);
-    });
-    
-    // Если есть активный трек, обновляем заполнение
-    if (typeof updateProgressFill === 'function') {
-        updateProgressFill();
-    }
-    if (typeof updateVolumeFill === 'function') {
-        updateVolumeFill();
-    }
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+    document.querySelectorAll('.custom-range').forEach(s => s.style.setProperty('--accent-color', accent));
+    if (typeof updateProgressFill === 'function') updateProgressFill();
+    if (typeof updateVolumeFill === 'function') updateVolumeFill();
 }
 
-// Заполнение формы настроек
 function fillSettingsForm() {
-    const settings = loadSettings();
+    const s = loadSettings();
     
-    document.getElementById('dark-theme-switch').checked = settings.darkTheme;
-    document.getElementById('color-scheme-select').value = settings.colorScheme;
-    document.getElementById('sort-tracks-select').value = settings.sortTracks;
-    document.getElementById('autoplay-select').value = settings.autoplay;
-    document.getElementById('notifications-switch').checked = settings.notifications;
-    document.getElementById('auto-play-switch').checked = settings.autoPlayOnStart;
-    document.getElementById('lyrics-switch').checked = settings.showLyrics;
-    document.getElementById('tracks-per-page-select').value = settings.tracksPerPage;
-    document.getElementById('cache-switch').checked = settings.cacheCovers;
-    document.getElementById('high-quality-switch').checked = settings.highQuality;
+    document.getElementById('dark-theme-switch').checked = s.darkTheme;
+    document.getElementById('color-scheme-select').value = s.colorScheme;
+    document.getElementById('font-size-select').value = s.fontSize;
+    document.getElementById('sort-tracks-select').value = s.sortTracks;
+    document.getElementById('tracks-per-page-select').value = s.tracksPerPage;
+    document.getElementById('cache-switch').checked = s.cacheCovers;
+    document.getElementById('show-lyrics-switch').checked = s.showLyrics;
+    document.getElementById('notifications-switch').checked = s.notifications;
+    
+    document.getElementById('crossfade-slider').value = s.crossfadeDuration;
+    document.getElementById('crossfade-value').textContent = s.crossfadeDuration == 0 ? 'Отключено' : `${s.crossfadeDuration} секунд`;
+    
+    document.getElementById('normalize-volume-switch').checked = s.normalizeVolume;
+    document.getElementById('gapless-switch').checked = s.gaplessPlayback;
+    document.getElementById('autoplay-similar-switch').checked = s.autoplaySimilar;
+    document.getElementById('streaming-quality-select').value = s.streamingQuality;
 }
 
-// Сортировка треков
-function sortTracks(tracks, sortBy) {
-    const sortedTracks = [...tracks];
+function updateSettingsLive() {
+    const s = {
+        darkTheme: document.getElementById('dark-theme-switch').checked,
+        colorScheme: document.getElementById('color-scheme-select').value,
+        fontSize: document.getElementById('font-size-select').value,
+        sortTracks: document.getElementById('sort-tracks-select').value,
+        tracksPerPage: parseInt(document.getElementById('tracks-per-page-select').value),
+        cacheCovers: document.getElementById('cache-switch').checked,
+        showLyrics: document.getElementById('show-lyrics-switch').checked,
+        notifications: document.getElementById('notifications-switch').checked,
+        crossfadeDuration: parseInt(document.getElementById('crossfade-slider').value),
+        normalizeVolume: document.getElementById('normalize-volume-switch').checked,
+        gaplessPlayback: document.getElementById('gapless-switch').checked,
+        autoplaySimilar: document.getElementById('autoplay-similar-switch').checked,
+        streamingQuality: document.getElementById('streaming-quality-select').value
+    };
     
-    switch(sortBy) {
-        case 'title':
-            return sortedTracks.sort((a, b) => a.title.localeCompare(b.title));
-        case 'artist':
-            return sortedTracks.sort((a, b) => a.artist.localeCompare(b.artist));
-        case 'duration':
-            return sortedTracks.sort((a, b) => (a.duration || 0) - (b.duration || 0));
-        default:
-            return tracks;
-    }
+    saveSettings(s);
+    showNotification('Настройки применены', 'success');
 }
 
-// Инициализация настроек
-function initSettings() {
-    // Загружаем и применяем настройки
-    const settings = loadSettings();
-    applySettings(settings);
-    
-    // Заполняем форму при открытии модального окна
-    const settingsModal = document.getElementById('settingsModal');
-    if (settingsModal) {
-        settingsModal.addEventListener('show.bs.modal', fillSettingsForm);
-    }
-    
-    // Обработчик сохранения настроек
-    const saveBtn = document.getElementById('save-settings-btn');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', function() {
-            const newSettings = {
-                darkTheme: document.getElementById('dark-theme-switch').checked,
-                colorScheme: document.getElementById('color-scheme-select').value,
-                sortTracks: document.getElementById('sort-tracks-select').value,
-                autoplay: document.getElementById('autoplay-select').value,
-                notifications: document.getElementById('notifications-switch').checked,
-                autoPlayOnStart: document.getElementById('auto-play-switch').checked,
-                showLyrics: document.getElementById('lyrics-switch').checked,
-                tracksPerPage: parseInt(document.getElementById('tracks-per-page-select').value),
-                cacheCovers: document.getElementById('cache-switch').checked,
-                highQuality: document.getElementById('high-quality-switch').checked
-            };
-            
-            saveSettings(newSettings);
-            
-            // Обновляем сортировку если нужно
-            if (typeof renderTracks === 'function' && window.tracks) {
-                const sortedTracks = sortTracks(window.tracks, newSettings.sortTracks);
-                renderTracks(sortedTracks, window.isYtSearch || false);
-            }
-            
-            // Показываем уведомление
-            showNotification('Настройки сохранены!', 'success');
-            
-            // Закрываем модальное окно
-            const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-            if (modal) modal.hide();
-        });
-    }
-    
-    // Сброс настроек
-    const resetBtn = document.getElementById('reset-settings-btn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-            if (confirm('Сбросить все настройки к значениям по умолчанию?')) {
-                localStorage.removeItem('aurora_settings');
-                initSettings();
-                showNotification('Настройки сброшены!', 'success');
-                
-                // Обновляем форму
-                fillSettingsForm();
-            }
-        });
-    }
-    
-    // Отслеживание изменений цветовой схемы
-    watchColorSchemeChanges();
-}
-
-// Отслеживание изменений цветовой схемы
 function watchColorSchemeChanges() {
-    // Используем MutationObserver для отслеживания изменений класса body
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                // Небольшая задержка чтобы изменения применились
-                setTimeout(() => {
-                    updatePlayButtonColor();
-                    updateSliderColors();
-                }, 100);
-            }
-        });
+    const observer = new MutationObserver(() => {
+        setTimeout(() => {
+            updatePlayButtonColor();
+            updateSliderColors();
+        }, 50);
     });
-    
-    // Начинаем наблюдение за изменениями в body
-    observer.observe(document.body, {
-        attributes: true,
-        attributeFilter: ['class']
-    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 }
 
-// Показ уведомлений
 function showNotification(message, type = 'info') {
-    // Создаем элемент уведомления
-    const notification = document.createElement('div');
-    notification.className = `notification alert alert-${type === 'success' ? 'success' : 'info'} position-fixed`;
-    notification.style.cssText = `
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        min-width: 300px;
-        animation: slideIn 0.3s ease;
-    `;
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+    }
     
-    notification.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-info-circle-fill'} me-2"></i>
-            <span>${message}</span>
-            <button type="button" class="btn-close btn-close-white ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0`;
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     `;
     
-    // Добавляем в DOM
-    document.body.appendChild(notification);
-    
-    // Удаляем через 3 секунды
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }
-    }, 3000);
+    container.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+    bsToast.show();
+    toast.addEventListener('hidden.bs.toast', () => toast.remove());
 }
 
-// Добавляем CSS для анимаций уведомлений
-const notificationStyles = document.createElement('style');
-notificationStyles.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
-    .notification {
-        background-color: var(--accent-color) !important;
-        border-color: var(--accent-color) !important;
-        color: white !important;
-    }
-`;
-document.head.appendChild(notificationStyles);
+function initSettings() {
+    const settings = loadSettings();
+    applySettings(settings);
+    fillSettingsForm();
 
-// Запуск при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    initSettings();
-});
+    // Live-обработчики
+    const ids = [
+        'dark-theme-switch', 'color-scheme-select', 'font-size-select', 'sort-tracks-select',
+        'tracks-per-page-select', 'cache-switch', 'show-lyrics-switch', 'notifications-switch',
+        'normalize-volume-switch', 'gapless-switch', 'autoplay-similar-switch',
+        'streaming-quality-select'
+    ];
+    
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', updateSettingsLive);
+    });
+
+    // Специально для слайдера кроссфейда
+    const crossfadeSlider = document.getElementById('crossfade-slider');
+    if (crossfadeSlider) {
+        crossfadeSlider.addEventListener('input', () => {
+            const val = crossfadeSlider.value;
+            document.getElementById('crossfade-value').textContent = val == 0 ? 'Отключено' : `${val} секунд`;
+            updateSettingsLive();
+        });
+    }
+
+    // Очистка кэша
+    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    if (clearCacheBtn) {
+        clearCacheBtn.addEventListener('click', () => {
+            if (confirm('Очистить весь кэш приложения? (настройки и плейлисты сохранятся)')) {
+                // Здесь можно очистить только кэш обложек, если он в IndexedDB или другом месте
+                // Пока просто перезагружаем
+                localStorage.removeItem('aurora_cover_cache'); // если есть такой ключ
+                showNotification('Кэш очищен', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+    }
+
+    watchColorSchemeChanges();
+}
+
+document.addEventListener('DOMContentLoaded', initSettings);
