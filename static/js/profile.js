@@ -289,6 +289,42 @@ document.addEventListener('DOMContentLoaded', function() {
             closeAllModals();
         }
     });
+    
+    // === Код из второго DOMContentLoaded (убран дубликат) ===
+    // Улучшаем модалку профиля
+    setTimeout(enhanceProfileModal, 100);
+    
+    // Инициализация слушателей событий для кастомизации
+    const customizationModal = document.getElementById('playerCustomizationModal');
+    if (customizationModal) {
+        // Сброс эквалайзера
+        const resetEqBtn = document.getElementById('reset-eq-btn');
+        if (resetEqBtn) {
+            resetEqBtn.addEventListener('click', () => {
+                applyEqualizerPreset('flat');
+            });
+        }
+        
+        // Предустановки эквалайзера
+        document.querySelectorAll('.eq-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                applyEqualizerPreset(preset);
+            });
+        });
+        
+        // Кастомные значения эквалайзера
+        document.querySelectorAll('.eq-band').forEach(slider => {
+            slider.addEventListener('input', () => {
+                applyCustomEqualizerValues();
+            });
+        });
+    }
+    
+    // Применяем настройки при загрузке
+    if (typeof applyCustomizationSettings === 'function') {
+        applyCustomizationSettings();
+    }
 });
 
 // Функция для сброса профиля к значениям по умолчанию
@@ -854,6 +890,8 @@ function removeParticles() {
 }
 
 // Инициализация при загрузке
+// DISABLED: This is a duplicate DOMContentLoaded listener - already handled at line 168
+/*
 document.addEventListener('DOMContentLoaded', function() {
     loadProfile();
     
@@ -935,6 +973,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Применяем настройки при загрузке
     applyCustomizationSettings();
 });
+*/
 
 // Экспортируем функции для использования в других модулях
 if (typeof window !== 'undefined') {
