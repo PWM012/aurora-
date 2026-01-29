@@ -179,27 +179,57 @@ def get_audio_url(videoId):
     # Если нет в кэше, получаем ссылку
     try:
         url = f"https://www.youtube.com/watch?v={videoId}"
-        # Используем более быстрые настройки
+        
+        # Улучшенные настройки для yt-dlp
         ydl_opts = {
-            'format': 'bestaudio[ext=webm]/bestaudio',
+            'format': 'bestaudio[ext=webm]/bestaudio/best',
             'noplaylist': True,
             'quiet': True,
             'no_warnings': True,
-            'socket_timeout': 8,
+            'socket_timeout': 10,
             'nocheckcertificate': True,
-            'http_chunk_size': 1048576,  # 1MB chunks
-            'retries': 3,
-            'fragment_retries': 3,
+            'retries': 5,
+            'fragment_retries': 5,
             'skip_unavailable_fragments': True,
             'continuedl': False,
             'ignoreerrors': True,
             'no_color': True,
-            'verbose': False
+            'verbose': False,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],
+                    'player_skip': ['webpage', 'configs'],
+                }
+            },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-us,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
         }
         
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            audio_url = info['url']
+            
+            # Пробуем разные форматы
+            if 'url' in info:
+                audio_url = info['url']
+            elif 'formats' in info:
+                # Ищем подходящий аудио формат
+                for fmt in info['formats']:
+                    if fmt.get('vcodec') == 'none' and fmt.get('acodec') != 'none':
+                        if 'url' in fmt:
+                            audio_url = fmt['url']
+                            break
+                else:
+                    # Если не нашли, берем первую доступную ссылку
+                    audio_url = info['formats'][0]['url']
+            else:
+                raise Exception("Не удалось получить аудио-ссылку")
             
             # Сохраняем в кэш
             audio_url_cache[videoId] = {
@@ -216,8 +246,32 @@ def get_audio_url(videoId):
             
             print(f"Кэширован аудио для: {videoId}")
             return audio_url
+            
     except Exception as e:
         print(f"Ошибка получения аудио-ссылки для {videoId}: {e}")
+        
+        # Пробуем альтернативный метод через pafy (если установлен)
+        try:
+            import pafy
+            video = pafy.new(videoId)
+            best_audio = video.getbestaudio()
+            audio_url = best_audio.url
+            
+            # Сохраняем в кэш
+            audio_url_cache[videoId] = {
+                'url': audio_url,
+                'timestamp': time.time(),
+                'duration': video.length,
+                'title': video.title,
+                'artist': video.author
+            }
+            
+            return audio_url
+        except ImportError:
+            print("pafy не установлен")
+        except Exception as e2:
+            print(f"Ошибка pafy: {e2}")
+        
         raise
 
 def fetch_yt_home_data():
@@ -1856,30 +1910,119 @@ def add_from_yt():
     if not video_id:
         return jsonify({'error': 'No videoId'}), 400
     
-    url = f"https://www.youtube.com/watch?v={video_id}"
+    # Получаем информацию о треке для имени файла
+    try:
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        ydl_info_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'skip_download': True,
+        }
+        
+        with YoutubeDL(ydl_info_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            title = info.get('title', f'video_{video_id}')
+            artist = info.get('uploader', 'Unknown Artist')
+            
+            # Если есть информация об артистах
+            if 'artist' in info and info['artist']:
+                artist = info['artist']
+            elif 'artists' in info and info['artists']:
+                artist = ', '.join([a.get('name', '') for a in info['artists'][:2]])
+            
+            # Очищаем имя файла
+            safe_title = re.sub(r'[<>:"/\\|?*]', '', title)[:100]
+            safe_artist = re.sub(r'[<>:"/\\|?*]', '', artist)[:100]
+            
+            filename = f"{safe_title} - {safe_artist}"
+    except Exception as e:
+        print(f"Ошибка получения информации: {e}")
+        filename = f"youtube_{video_id}"
+    
+    # Полный путь для файла
+    output_template = os.path.join(MUSIC_FOLDER, f"{filename}.%(ext)s")
+    
+    # Улучшенные настройки с гарантированным добавлением обложки
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': os.path.join(MUSIC_FOLDER, '%(title)s - %(artist)s.%(ext)s'),
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }, {
-            'key': 'EmbedThumbnail',
-            'already_have_thumbnail': False
-        }],
-        'writethumbnail': True,
-        'embed_metadata': True,
-        'ignoreerrors': True
+        'format': 'bestaudio[ext=webm]/bestaudio/best',
+        'outtmpl': output_template,
+        'postprocessors': [
+            {
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            },
+            {
+                'key': 'FFmpegMetadata',
+                'add_metadata': True,
+            },
+            {
+                'key': 'EmbedThumbnail',
+                'already_have_thumbnail': False,
+            }
+        ],
+        'writethumbnail': True,  # Скачиваем обложку отдельно
+        'embedthumbnail': True,  # Встраиваем обложку
+        'embed_metadata': True,  # Встраиваем метаданные
+        'ignoreerrors': True,
+        'no_warnings': True,
+        'quiet': False,
+        'retries': 10,
+        'fragment_retries': 10,
+        'keepvideo': False,
+        'continuedl': False,
+        'noplaylist': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],
+                'player_skip': ['webpage', 'configs'],
+            }
+        },
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+        }
     }
     
     try:
         with YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-        return jsonify({'success': True})
+            # Скачиваем видео
+            print(f"Начинаем загрузку: {title} - {artist}")
+            result = ydl.download([url])
+            
+            # Ищем скачанный файл
+            downloaded_files = []
+            for file in os.listdir(MUSIC_FOLDER):
+                if file.endswith('.mp3'):
+                    # Проверяем по ID или по названию
+                    if video_id in file or filename[:30].lower() in file.lower():
+                        downloaded_files.append(file)
+                        
+                        # Проверяем и исправляем метаданные
+                        fix_metadata(file, title, artist, video_id)
+            
+            if downloaded_files:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Музыка успешно добавлена с обложкой',
+                    'files': downloaded_files
+                })
+            else:
+                return jsonify({
+                    'success': False, 
+                    'error': 'Файл не найден после загрузки'
+                })
+                    
     except Exception as e:
-        print(f"Ошибка загрузки с YouTube: {e}")
-        return jsonify({'error': str(e)}), 500
+        print(f"Ошибка загрузки с YouTube: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'error': f'Ошибка загрузки: {str(e)}'
+        }), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_files():
