@@ -1481,7 +1481,7 @@ function playYtTrack(idx) {
     }
     
     // Показываем индикатор загрузки
-    showLoadingProgress(track.title);
+    //showLoadingProgress(track.title);
     
     // Предзагрузка следующего трека
     if (tracks[idx + 1]) {
