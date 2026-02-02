@@ -14,6 +14,32 @@ body {
     overflow-x: hidden;
 }
 
+
+
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.loading-overlay-content {
+    text-align: center;
+    background: rgba(40, 40, 40, 0.9);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    min-width: 300px;
+}
+
 /* Улучшение левой панели */
 .sidebar {
     width: 280px;
@@ -429,6 +455,220 @@ body {
     visibility: visible;
 }
 
+
+/* ==================== РАДИО РЕЖИМ ==================== */
+
+body.radio-mode {
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+}
+
+.radio-mode .navbar {
+    background: rgba(10, 10, 10, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--accent-color);
+}
+
+.radio-mode .sidebar {
+    background: rgba(20, 20, 35, 0.9) !important;
+    backdrop-filter: blur(10px);
+}
+
+.radio-grid {
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+.radio-header {
+    animation: slideInDown 0.5s ease;
+}
+
+.radio-header .card {
+    background: linear-gradient(90deg, rgba(29, 185, 84, 0.1) 0%, rgba(10, 10, 10, 0.9) 100%);
+    border: 1px solid rgba(29, 185, 84, 0.3);
+    box-shadow: 0 10px 30px rgba(29, 185, 84, 0.2);
+}
+
+.current-radio-track {
+    animation: fadeIn 0.7s ease;
+}
+
+.current-radio-track .card {
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.radio-track-card {
+    animation: fadeInUp 0.5s ease;
+    animation-fill-mode: both;
+}
+
+.radio-track-card:nth-child(1) { animation-delay: 0.1s; }
+.radio-track-card:nth-child(2) { animation-delay: 0.2s; }
+.radio-track-card:nth-child(3) { animation-delay: 0.3s; }
+.radio-track-card:nth-child(4) { animation-delay: 0.4s; }
+.radio-track-card:nth-child(5) { animation-delay: 0.5s; }
+.radio-track-card:nth-child(6) { animation-delay: 0.6s; }
+
+.radio-track-card .card {
+    transition: all 0.3s ease;
+    background: rgba(30, 30, 40, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.radio-track-card .card:hover {
+    transform: translateY(-5px);
+    background: rgba(40, 40, 50, 0.9);
+    border-color: var(--accent-color);
+    box-shadow: 0 5px 20px rgba(29, 185, 84, 0.3);
+}
+
+.radio-loading-container {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(10, 10, 10, 0.8);
+    border-radius: 15px;
+    border: 2px dashed rgba(29, 185, 84, 0.3);
+    animation: pulse 2s infinite;
+}
+
+.radio-controls .btn {
+    transition: all 0.3s ease;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.radio-controls .btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(29, 185, 84, 0.5);
+}
+
+.radio-load-more {
+    margin-top: 2rem;
+    padding: 2rem;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+/* Анимации */
+@keyframes slideInDown {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        border-color: rgba(29, 185, 84, 0.3);
+    }
+    50% {
+        border-color: rgba(29, 185, 84, 0.6);
+    }
+    100% {
+        border-color: rgba(29, 185, 84, 0.3);
+    }
+}
+
+/* Кнопка радио в карточке трека */
+.action-btn.radio {
+    color: #1DB954;
+    transition: all 0.3s ease;
+}
+
+.action-btn.radio:hover {
+    color: #fff;
+    background: rgba(29, 185, 84, 0.2);
+    transform: scale(1.1);
+}
+
+/* Индикатор радио в плеере */
+.player-radio-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #1DB954;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2s infinite;
+}
+
+/* Адаптивность для радио */
+@media (max-width: 768px) {
+    .radio-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .radio-header .card-body .row {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .radio-header .col-auto {
+        margin-bottom: 1rem;
+    }
+    
+    .radio-controls {
+        margin-top: 1rem;
+        justify-content: center !important;
+    }
+    
+    .radio-track-card {
+        grid-column: 1 / -1 !important;
+    }
+}
+
+/* Эффект для кнопки выхода из радио */
+#exit-radio-btn a {
+    animation: glow 2s infinite;
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.8);
+    }
+}
+
+.radio-btn {
+    font-size: 0.85rem;
+}
+
+.radio-btn:hover {
+    background-color: var(--accent-color) !important;
+    color: white !important;
+}
+
+
+
+
+
 /* Стили для загрузки */
 .loading-spinner {
     width: 40px;
@@ -493,21 +733,59 @@ body {
     transform: scale(1.2);
 }
 
+/* ========== ИСПРАВЛЕННАЯ КНОПКА ПЛЕЙ ========== */
 #play-btn {
     width: 50px;
     height: 50px;
     background: var(--accent-color);
     border: none;
+    border-radius: 50% !important;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: center !important;
+    justify-content: center !important;
     transition: all 0.2s ease;
+    padding: 0 !important;
+    margin: 0 !important;
+    position: relative;
+    overflow: hidden;
 }
 
+/* Исправляем иконку внутри кнопки */
+#play-btn i {
+    font-size: 1.8rem !important;
+    line-height: 1 !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Убираем все Bootstrap отступы и выравнивания */
+#play-btn.btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Ховер эффект */
 #play-btn:hover {
-    background: #1ed760;
+    background: #1ed760 !important;
     transform: scale(1.05);
 }
+
+/* Состояния кнопки
+#play-btn.playing i::before {
+    content: "\f28c" !important; 
+}
+
+#play-btn.paused i::before {
+    content: "\f144" !important; 
+} */
 
 /* Стили для тостов */
 .toast-container {
@@ -566,6 +844,10 @@ body {
     #play-btn {
         width: 45px;
         height: 45px;
+    }
+    
+    #play-btn i {
+        font-size: 1.6rem !important;
     }
 }
 
@@ -810,4 +1092,114 @@ body {
         transparent 100%
     );
     opacity: 0.5;
+}
+
+
+/* Стили для активных кнопок плеера как в Spotify */
+.player-controls .btn-control.active {
+    color: var(--accent-color) !important;
+    background-color: rgba(29, 185, 84, 0.1) !important;
+}
+
+/* Кнопка перемешивания */
+#shuffle-btn.active {
+    color: var(--accent-color) !important;
+}
+
+#shuffle-btn.active:hover {
+    color: #1ed760 !important;
+}
+
+/* Кнопка повтора */
+#repeat-btn.active {
+    color: var(--accent-color) !important;
+}
+
+#repeat-btn.active:hover {
+    color: #1ed760 !important;
+}
+
+/* Состояния повтора (одно, все) */
+#repeat-btn.repeat-one {
+    position: relative;
+}
+
+#repeat-btn.repeat-one::after {
+    content: "1";
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 8px;
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+
+.modal-backdrop {
+    opacity: 0.5 !important;
+    z-index: 1040 !important;
+}
+
+.modal {
+    z-index: 1050 !important;
+}
+
+/* Исправление для затемнения при множественных модалках */
+.modal-open .modal {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Убедитесь, что body не блокируется */
+body.modal-open {
+    overflow: hidden;
+    padding-right: 0 !important;
+}
+
+
+
+/* ========== ИСПРАВЛЕНИЕ ЦЕНТРИРОВАНИЯ ИКОНКИ ПЛЕЙ НА ТРЕКАХ ========== */
+.play-overlay .btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 50px;
+    height: 50px;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+}
+
+.play-overlay .btn i {
+    font-size: 1.5rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: static !important;
+    transform: none !important;
+    top: auto !important;
+    left: auto !important;
+}
+
+/* Убираем лишние трансформации */
+.play-overlay .btn {
+    transform: translateY(0) !important;
+}
+
+.card:hover .play-overlay .btn {
+    transform: translateY(0) !important;
+}
+
+/* Дополнительные исправления для иконок FontAwesome */
+.play-overlay .btn i::before {
+    vertical-align: middle !important;
+}
+
+/* Исправление для Bootstrap если есть */
+.play-overlay .btn .bi {
+    margin: 0 !important;
+    padding: 0 !important;
 }
