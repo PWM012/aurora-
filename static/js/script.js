@@ -542,9 +542,19 @@ async function getLyrics(title, artist, videoId = '') {
 
 // ==================== ГЛАВНАЯ СТРАНИЦА ====================
 
+// ==================== ГЛАВНАЯ СТРАНИЦА ====================
+
 async function loadHome() {
-    if (isHomeLoading) return;
+    // Защита от одновременного запуска нескольких загрузок
+    if (isHomeLoading) {
+        console.debug('Загрузка главной уже выполняется, пропускаем дублирующий вызов');
+        return;
+    }
+    
     isHomeLoading = true;
+    console.debug('Начало загрузки главной страницы');
+    
+    // Скрываем поисковую строку на главной
     document.getElementById('search-bar').style.display = 'none';
     document.getElementById('page-title').textContent = 'Главная';
     currentPlaylist = null;
@@ -568,9 +578,22 @@ async function loadHome() {
     `;
     
     try {
-        // Загружаем данные
-        const response = await fetch('/yt_home_data');
-        ytHomeData = await response.json();
+        // Параллельно загружаем данные YouTube и локальные треки
+        const [ytResponse, localResponse] = await Promise.all([
+            fetch('/yt_home_data'),
+            fetch('/tracks')
+        ]);
+        
+        if (!ytResponse.ok) {
+            throw new Error(`Ошибка загрузки данных YouTube: ${ytResponse.status}`);
+        }
+        
+        ytHomeData = await ytResponse.json();
+        let localTracks = [];
+        
+        if (localResponse.ok) {
+            localTracks = await localResponse.json();
+        }
         
         let html = '';
         
@@ -815,6 +838,53 @@ async function loadHome() {
             });
         }
         
+        // Добавляем локальные треки в ту же итерацию, если они есть
+        if (localTracks.length > 0) {
+            const recentTracks = localTracks.slice(-6).reverse();
+            
+            html += `
+                <div class="section-header" style="grid-column: 1 / -1;">
+                    <h4>Ваша библиотека</h4>
+                    <div class="section-subtitle">Недавно добавленные треки</div>
+                </div>
+            `;
+            
+            recentTracks.forEach((track, i) => {
+                const cover = track.cover || placeholder;
+                html += `
+                    <div class="home-card-item" style="--item-index: ${i}">
+                        <div class="card local-library-card">
+                            <div class="card-img-container">
+                                <img src="${cover}" class="card-img-top" alt="${track.title}">
+                                <div class="play-overlay">
+                                    <button class="btn btn-success play-overlay-btn local-track-play-btn" 
+                                            data-filename="${track.filename}"
+                                            data-title="${track.title}"
+                                            data-artist="${track.artist}">
+                                        <i class="bi bi-play-fill"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title text-truncate-2">${track.title}</h5>
+                                <p class="card-text">${track.artist}</p>
+                                <button class="btn btn-sm btn-outline-light w-100 mt-1 local-playlist-btn" 
+                                        data-index="${localTracks.length - 1 - i}">
+                                    <i class="bi bi-plus-circle"></i> В плейлист
+                                </button>
+                                <button class="btn btn-sm btn-outline-info radio-btn home-radio-btn w-100 mt-1" 
+                                        data-filename="${track.filename}"
+                                        data-title="${track.title}"
+                                        data-artist="${track.artist}">
+                                    <i class="bi bi-radioactive me-1"></i> Радио
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
         // Если нет данных
         if (!html) {
             html = `
@@ -826,98 +896,59 @@ async function loadHome() {
                     <div class="card text-center p-5">
                         <i class="bi bi-music-note-beamed fs-1 text-secondary mb-3"></i>
                         <p class="text-secondary">Попробуйте обновить страницу</p>
-                        <button class="btn btn-success mt-3" onclick="loadHome()">
-                            <i class="bi bi-arrow-clockwise me-2"></i>Обновить
-                        </button>
                     </div>
                 </div>
             `;
         }
         
+        // ЕДИНОРАЗОВО обновляем сетку - без дополнительных рендеров
         trackGrid.innerHTML = html;
         
-        // Добавляем локальные треки
-        try {
-            const localResponse = await fetch('/tracks');
-            const localTracks = await localResponse.json();
-            
-            if (localTracks.length > 0) {
-                const recentTracks = localTracks.slice(-6).reverse();
-                
-                let localHtml = `
-                    <div class="section-header" style="grid-column: 1 / -1;">
-                        <h4>Ваша библиотека</h4>
-                        <div class="section-subtitle">Недавно добавленные треки</div>
-                    </div>
-                `;
-                
-                recentTracks.forEach((track, i) => {
-                    const cover = track.cover || placeholder;
-                    localHtml += `
-                        <div class="home-card-item" style="--item-index: ${i}">
-                            <div class="card local-library-card">
-                                <div class="card-img-container">
-                                    <img src="${cover}" class="card-img-top" alt="${track.title}">
-                                    <div class="play-overlay">
-                                        <button class="btn btn-success play-overlay-btn local-track-play-btn" 
-                                                data-filename="${track.filename}"
-                                                data-title="${track.title}"
-                                                data-artist="${track.artist}">
-                                            <i class="bi bi-play-fill"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <h5 class="card-title text-truncate-2">${track.title}</h5>
-                                    <p class="card-text">${track.artist}</p>
-                                    <button class="btn btn-sm btn-outline-light w-100 mt-1 local-playlist-btn" 
-                                            data-index="${localTracks.length - 1 - i}">
-                                        <i class="bi bi-plus-circle"></i> В плейлист
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-info radio-btn home-radio-btn w-100 mt-1" 
-                                            data-filename="${track.filename}"
-                                            data-title="${track.title}"
-                                            data-artist="${track.artist}">
-                                        <i class="bi bi-radioactive me-1"></i> Радио
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                // Добавляем локальные треки в конец
-                trackGrid.innerHTML += localHtml;
-                isHomeLoading = false;
-            }
-        } catch (error) {
-                console.error('Ошибка загрузки главной:', error);
-                isHomeLoading = false;
-        }
-        
-        // Настраиваем обработчики событий ДЛЯ ВСЕХ КАРТОЧЕК
+        // Настраиваем обработчики событий ОДИН РАЗ
         setupHomeEventListeners();
         
         // Предзагружаем популярные треки
         prefetchPopularTracks();
         
+        console.debug('Главная страница успешно загружена');
+        
     } catch (error) {
-        console.error('Ошибка загрузки главной:', error);
-        trackGrid.innerHTML = `
-            <div class="section-header" style="grid-column: 1 / -1;">
-                <h4>Ошибка загрузки</h4>
-                <div class="section-subtitle">Проверьте подключение к интернету</div>
-            </div>
-            <div class="home-card-item empty-state" style="grid-column: 1 / -1;">
-                <div class="card text-center p-5">
-                    <i class="bi bi-exclamation-triangle-fill fs-1 text-danger mb-3"></i>
-                    <p class="text-secondary">Не удалось загрузить рекомендации</p>
-                    <button class="btn btn-outline-light mt-3" onclick="loadHome()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Попробовать снова
-                    </button>
+        console.error('Критическая ошибка загрузки главной:', error);
+        
+        // Показываем ошибку только если еще не отображаем другую
+        if (trackGrid && !trackGrid.innerHTML.includes('Ошибка загрузки')) {
+            trackGrid.innerHTML = `
+                <div class="section-header" style="grid-column: 1 / -1;">
+                    <h4>Ошибка загрузки</h4>
+                    <div class="section-subtitle">Проверьте подключение к интернету</div>
                 </div>
-            </div>
-        `;
+                <div class="home-card-item empty-state" style="grid-column: 1 / -1;">
+                    <div class="card text-center p-5">
+                        <i class="bi bi-exclamation-triangle-fill fs-1 text-danger mb-3"></i>
+                        <p class="text-secondary">Не удалось загрузить рекомендации</p>
+                        <button class="btn btn-outline-light mt-3" id="retry-home-btn">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Попробовать снова
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Добавляем обработчик для кнопки повторной загрузки
+            setTimeout(() => {
+                const retryBtn = document.getElementById('retry-home-btn');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        isHomeLoading = false; // Разрешаем повторную загрузку
+                        loadHome();
+                    });
+                }
+            }, 50);
+        }
+    } finally {
+        // Сбрасываем флаг загрузки
+        isHomeLoading = false;
+        console.debug('Флаг isHomeLoading сброшен');
     }
 }
 
@@ -1481,7 +1512,7 @@ function playYtTrack(idx) {
     }
     
     // Показываем индикатор загрузки
-    //showLoadingProgress(track.title);
+    // showLoadingProgress(track.title);
     
     // Предзагрузка следующего трека
     if (tracks[idx + 1]) {
