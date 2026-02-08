@@ -49,6 +49,11 @@ CACHE_EXPIRE_SECONDS = 21600
 radio_cache: Dict[str, Dict] = {}
 RADIO_CACHE_DURATION = 3600  
 
+
+# Определяем абсолютный путь к папке music
+BASE_DIR = Path(__file__).parent.absolute()
+MUSIC_FOLDER = os.path.join(BASE_DIR, 'music')
+
 # Инициализация базы данных
 def init_db():
     with closing(sqlite3.connect('music_player.db')) as conn:
@@ -165,6 +170,50 @@ init_db()
 
 # ==========  ФУНКЦИИ ИЗ ПЕРВОГО  ==========
 
+
+# Замените существующую инициализацию папок в конце файла:
+if __name__ == '__main__':
+    # Создаем папки если их нет
+    os.makedirs(MUSIC_FOLDER, exist_ok=True)
+    # Проверяем права доступа к папке
+    try:
+        test_file = os.path.join(MUSIC_FOLDER, 'test_write.txt')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        print(f"✓ Папка {MUSIC_FOLDER} доступна для записи")
+    except Exception as e:
+        print(f"✗ Ошибка доступа к папке {MUSIC_FOLDER}: {e}")
+        print(f"Создайте папку 'music' вручную: mkdir {MUSIC_FOLDER}")
+
+
+
+def fix_file_paths():
+    # """Исправляет пути к файлам после скачивания с GitHub"""
+    try:
+        # Ищем все файлы в различных возможных местах
+        possible_locations = [
+            'music',
+            './music',
+            '../music',
+            os.path.join(os.path.dirname(__file__), 'music'),
+            os.path.join(os.getcwd(), 'music')
+        ]
+        
+        for location in possible_locations:
+            if os.path.exists(location):
+                print(f"Найдена папка music: {location}")
+                # Копируем файлы в правильную папку
+                for file in os.listdir(location):
+                    if os.path.splitext(file)[1].lower() in ALLOWED_EXTENSIONS:
+                        src = os.path.join(location, file)
+                        dst = os.path.join(MUSIC_FOLDER, file)
+                        if not os.path.exists(dst):
+                            shutil.copy2(src, dst)
+                            print(f"Скопирован: {file}")
+                break
+    except Exception as e:
+        print(f"Ошибка при исправлении путей: {e}")
 def get_audio_url(videoId):
     """Получаем аудио-ссылку для videoId с кэшированием"""
     # Проверяем кэш
@@ -273,6 +322,8 @@ def get_audio_url(videoId):
             print(f"Ошибка pafy: {e2}")
         
         raise
+
+
 
 def fetch_yt_home_data():
     """Получаем данные для главной из YouTube Music"""
@@ -667,6 +718,36 @@ def search_lyrics_online(title, artist):
         print(f"Ошибка при поиске текста: {e}")
     
     return None
+
+
+
+def fix_file_paths():
+    """Исправляет пути к файлам после скачивания с GitHub"""
+    try:
+        # Ищем все файлы в различных возможных местах
+        possible_locations = [
+            'music',
+            './music',
+            '../music',
+            os.path.join(os.path.dirname(__file__), 'music'),
+            os.path.join(os.getcwd(), 'music')
+        ]
+        
+        for location in possible_locations:
+            if os.path.exists(location):
+                print(f"Найдена папка music: {location}")
+                # Копируем файлы в правильную папку
+                for file in os.listdir(location):
+                    if os.path.splitext(file)[1].lower() in ALLOWED_EXTENSIONS:
+                        src = os.path.join(location, file)
+                        dst = os.path.join(MUSIC_FOLDER, file)
+                        if not os.path.exists(dst):
+                            shutil.copy2(src, dst)
+                            print(f"Скопирован: {file}")
+                break
+    except Exception as e:
+        print(f"Ошибка при исправлении путей: {e}")
+
 
 def get_cached_lyrics(title, artist):
     """Проверяем кэш текстов песен"""
