@@ -1,5 +1,15 @@
 music/
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.m4a
+music_player.db
+lyrics_cache.json
+playlist_*.m3u
+*.zip
+cache/
 __pycache__/
 *.pyc
-venv/
 .env
+.DS_Store
